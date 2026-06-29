@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>管理コンソール ｜ TFT リーダーボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F2FA;--bg-2:#E9E7F6;--surface:#FFFFFF;--surface-2:#F7F6FD;
+  --border:#E7E3F3;--border-strong:#D8D3EC;--ink:#2C2A47;--muted:#807D9C;
+  --pink:#D94E97;--pink-deep:#B83C7E;--pink-soft:#F4B7D6;
+  --cyan:#1FA3B4;--cyan-deep:#188A99;--cyan-soft:#A6E1E8;--danger:#E25563;--gold:#E0A52E;
+  --grad:linear-gradient(135deg,var(--pink),var(--cyan));
+  --shadow:0 16px 36px -22px rgba(70,50,110,.35);--shadow-soft:0 8px 22px -14px rgba(70,50,110,.28);
+  --hexline:rgba(120,90,170,.16);
+}
+:root[data-theme="dark"]{
+  --bg:#16121F;--bg-2:#0F0C17;--surface:#1F1A2C;--surface-2:#272138;
+  --border:#352C49;--border-strong:#473A60;--ink:#EFEAF8;--muted:#9C95B4;
+  --pink:#F26DB0;--pink-deep:#F58CC2;--pink-soft:#7A3560;
+  --cyan:#4FD2DF;--cyan-deep:#7BE0E9;--cyan-soft:#1E5A64;--danger:#F2727F;--gold:#F2C661;
+  --grad:linear-gradient(135deg,var(--pink),var(--cyan));
+  --shadow:0 18px 40px -22px rgba(0,0,0,.7);--shadow-soft:0 10px 26px -16px rgba(0,0,0,.6);
+  --hexline:rgba(180,150,230,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
+  background:radial-gradient(900px 480px at 88% -8%,color-mix(in srgb,var(--pink) 14%,transparent),transparent 60%),
+    radial-gradient(820px 460px at -8% 6%,color-mix(in srgb,var(--cyan) 13%,transparent),transparent 58%),var(--bg);
+  color:var(--ink);min-height:100vh;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.num{font-family:"Space Grotesk",sans-serif;font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+code{background:var(--bg-2);padding:1px 6px;border-radius:5px;font-size:.92em;font-family:"Space Grotesk",monospace}
+.wrap{max-width:1000px;margin:0 auto;padding:clamp(18px,4vw,38px) clamp(16px,4vw,40px) 84px}
+
+/* hero */
+.hero{position:relative;border:1px solid var(--border);border-radius:26px;
+  background:radial-gradient(420px 220px at 92% 120%,color-mix(in srgb,var(--cyan) 12%,transparent),transparent 70%),
+    linear-gradient(150deg,color-mix(in srgb,var(--pink) 8%,var(--surface)),var(--surface));
+  padding:clamp(20px,3vw,30px) clamp(20px,3.4vw,38px);overflow:hidden;box-shadow:var(--shadow)}
+.hero::before{content:"";position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cpath d='M28 0L56 16v32L28 64 0 48V16z M28 64L56 80v32M28 64L0 80v32' fill='none' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E");
+  background-size:56px 96px;color:var(--hexline);
+  -webkit-mask-image:linear-gradient(120deg,#000 0%,transparent 58%);mask-image:linear-gradient(120deg,#000 0%,transparent 58%);opacity:.55}
+.hero>*{position:relative;z-index:1}
+.hero-row{display:flex;align-items:center;gap:clamp(12px,3vw,26px)}
+.hero-figure img{height:clamp(72px,11vw,104px);width:auto;display:block;filter:drop-shadow(0 12px 16px rgba(80,40,110,.2))}
+.logorow{display:flex;align-items:center;gap:12px;margin-bottom:3px}
+.logohex{width:42px;height:42px;flex:none;display:grid;place-items:center;background:var(--grad);color:#fff;font-size:18px;
+  clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.eyebrow{font-family:"Space Grotesk",sans-serif;letter-spacing:.3em;text-transform:uppercase;font-size:11px;color:var(--pink);font-weight:600}
+h1{font-size:clamp(22px,4vw,32px);font-weight:900;line-height:1.16;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:var(--muted);margin-top:5px;font-size:14px}
+.themebtn{position:absolute;top:clamp(16px,3vw,24px);right:clamp(16px,3vw,24px);z-index:2;width:40px;height:40px;
+  border-radius:12px;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);font-size:17px;cursor:pointer;
+  display:grid;place-items:center;transition:.16s;box-shadow:var(--shadow-soft)}
+.themebtn:hover{border-color:var(--pink);transform:translateY(-1px)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}
+.spacer{flex:1}
+.badge{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:600;padding:6px 11px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--surface)}
+.badge.live{border-color:color-mix(in srgb,var(--cyan) 45%,transparent);color:var(--cyan-deep);background:color-mix(in srgb,var(--cyan) 10%,transparent)}
+.badge.local{border-color:color-mix(in srgb,var(--gold) 50%,transparent);color:var(--gold);background:color-mix(in srgb,var(--gold) 12%,transparent)}
+.linkbtn{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;font-size:13px;font-weight:600;color:var(--muted);
+  padding:8px 13px;border-radius:11px;border:1px solid var(--border);background:var(--surface);transition:.16s;box-shadow:var(--shadow-soft)}
+.linkbtn:hover{border-color:var(--pink);color:var(--pink)}
+
+/* cards */
+section.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-soft);padding:clamp(16px,2.6vw,24px);margin-top:18px}
+section.card h2{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+section.card h2::before{content:"";width:14px;height:16px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+section.card.danger h2::before{background:var(--danger)}
+section.card.danger{border-color:color-mix(in srgb,var(--danger) 35%,var(--border))}
+section.card.danger h2{color:var(--danger)}
+.desc{color:var(--muted);font-size:13px;margin-bottom:14px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-family:"Space Grotesk",sans-serif;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+input,select,textarea{background:var(--surface);border:1px solid var(--border);border-radius:11px;color:var(--ink);font-family:inherit;font-size:14px;padding:10px 12px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 3px color-mix(in srgb,var(--pink) 18%,transparent)}
+.field input[type=number]{width:96px}
+textarea{width:100%;resize:vertical;font-family:inherit}
+.btn{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;font-size:14px;font-weight:600;padding:10px 16px;border-radius:12px;
+  border:1px solid var(--border);background:var(--surface);color:var(--ink);box-shadow:var(--shadow-soft);transition:.16s}
+.btn:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+.btn.grad{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 10px 22px -10px color-mix(in srgb,var(--pink) 55%,transparent)}
+.btn.grad:hover{filter:brightness(1.05)}
+.btn.danger{border-color:color-mix(in srgb,var(--danger) 45%,var(--border));color:var(--danger)}
+.btn.danger:hover{background:var(--danger);color:#fff;border-color:transparent}
+
+/* table */
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:none}
+th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.mst-name input{width:150px}.mst-riot input{width:190px}
+.tag{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--border)}
+.tag.ok{color:var(--cyan-deep);border-color:color-mix(in srgb,var(--cyan) 40%,transparent);background:color-mix(in srgb,var(--cyan) 10%,transparent)}
+.tag.no{color:var(--muted)}
+.muted{color:var(--muted);font-size:13px}
+
+/* manual grid */
+.matchsel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.mtab{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;padding:7px 13px;border-radius:11px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:13px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
+.mtab.on{background:var(--grad);color:#fff;border-color:transparent}
+.grid-blocks{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.tblock{border:1px solid var(--border);border-radius:16px;padding:14px;background:var(--surface-2)}
+.tblock h4{font-size:15px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.tblock h4::before{content:"";width:12px;height:14px;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.grp-label{font-family:"Space Grotesk",sans-serif;font-size:10px;color:var(--cyan-deep);font-weight:600;letter-spacing:.08em;margin:8px 0 4px;text-transform:uppercase}
+.rinput{width:50px;text-align:center;padding:5px;border-radius:9px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--pink);color:var(--ink);padding:11px 20px;border-radius:13px;font-weight:600;box-shadow:var(--shadow);z-index:50;max-width:90vw}
+.hidden{display:none!important}
+@media(max-width:560px){.mst-name input{width:104px}.mst-riot input{width:120px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <button class="themebtn" id="themeBtn" title="テーマ切替" aria-label="テーマ切替">🌙</button>
+    <div class="hero-row">
+      <div class="hero-figure"><img src="assets/moto-focus.png" alt="もと先生" onerror="this.style.display='none'"></div>
+      <div>
+        <div class="logorow"><span class="logohex">⬡</span><span class="eyebrow">Mountain Chonk School</span></div>
+        <h1>管理コンソール</h1>
+        <p class="subtitle">選手マスタ・順位手入力・API設定・バックアップ</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <span id="syncBadge" class="badge local">接続中…</span>
+      <span class="spacer"></span>
+      <a class="linkbtn" id="boardLink" href="index.html">本番ボードへ ↗</a>
+    </div>
+  </header>
+
+  <!-- ボード設定 -->
+  <section class="card">
+    <h2>ボード設定</h2>
+    <p class="desc">モードを変更すると組卓・順位はリセットされます。</p>
+    <div class="row">
+      <div class="field"><label>モード</label>
+        <select id="mode">
+          <option value="solo">個人戦</option>
+          <option value="team">チーム戦 4v4</option>
+          <option value="doubleup">ダブルアップ</option>
+        </select>
+      </div>
+      <div class="field"><label>試合数</label><input type="number" id="matchCount" min="1" max="20"></div>
+      <div class="field"><label>卓数</label><input type="number" id="tableCount" min="1" max="12"></div>
+    </div>
+  </section>
+
+  <!-- 選手マスタ -->
+  <section class="card">
+    <h2>選手マスタ</h2>
+    <p class="desc">名前と Riot ID（<b>Name#TAG</b> 形式）を登録。Riot ID があると順位の自動取得が使えます。</p>
+    <div class="row" style="margin-bottom:14px">
+      <div class="field" style="flex:1;min-width:140px"><label>名前</label><input id="newName" placeholder="プレイヤー名"></div>
+      <div class="field" style="flex:1;min-width:160px"><label>Riot ID（任意）</label><input id="newRiot" placeholder="例: Mo10C#JP1"></div>
+      <button class="btn grad" id="addBtn">追加</button>
+    </div>
+    <table id="rosterTable">
+      <thead><tr><th>名前</th><th>Riot ID</th><th>状態</th><th></th></tr></thead>
+      <tbody id="rosterBody"></tbody>
+    </table>
+    <div style="margin-top:14px">
+      <div class="field"><label>まとめて追加（1行1人 ／「名前,Riot ID」でID同時登録）</label>
+        <textarea id="bulk" rows="3" placeholder="むりこ&#10;Mo10C,Mo10C#JP1&#10;たろう,Taro#1234"></textarea>
+      </div>
+      <button class="btn sm" id="bulkBtn" style="margin-top:8px">一括追加</button>
+    </div>
+  </section>
+
+  <!-- Riot API -->
+  <section class="card">
+    <h2>Riot API</h2>
+    <p class="desc" id="apiDesc"></p>
+    <div class="row">
+      <button class="btn" id="testBtn">接続テスト</button>
+      <button class="btn grad" id="fetchAllBtn">全試合・全卓を自動取得</button>
+      <span class="muted" id="apiStatus"></span>
+    </div>
+  </section>
+
+  <!-- 順位手入力 -->
+  <section class="card">
+    <h2>順位 手入力</h2>
+    <p class="desc">APIが使えない時や修正用。試合を選んで各卓の順位を直接入力します。</p>
+    <div class="matchsel" id="matchSel"></div>
+    <div class="grid-blocks" id="manualGrid"></div>
+  </section>
+
+  <!-- データ管理 -->
+  <section class="card">
+    <h2>データ管理</h2>
+    <p class="desc">バックアップ・復元・ボード切替。</p>
+    <div class="row" style="margin-bottom:14px">
+      <button class="btn" id="exportBtn">JSONエクスポート</button>
+      <label class="btn" style="display:inline-flex;align-items:center">JSONインポート
+        <input type="file" id="importFile" accept="application/json" class="hidden"></label>
+    </div>
+    <div class="row">
+      <div class="field"><label>ボードID切替（別大会用）</label><input id="boardIdInput" placeholder="例: gasshuku-2026"></div>
+      <button class="btn" id="switchBtn">このボードを開く</button>
+      <span class="muted">現在: <b id="curBoard" class="num"></b></span>
+    </div>
+  </section>
+
+  <!-- 危険 -->
+  <section class="card danger">
+    <h2>危険な操作</h2>
+    <p class="desc">この操作は元に戻せません。</p>
+    <div class="row">
+      <button class="btn danger" id="clearResultsBtn">全結果をクリア（組卓は保持）</button>
+      <button class="btn danger" id="resetBtn">ボードを初期化（全消去）</button>
+    </div>
+  </section>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script src="tft-core.js"></script>
+<script>
+(function(){
+  const C=window.TFTCore, store=C.makeStore();
+  let curMatch=0;
+  const $=s=>document.querySelector(s);
+  const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;};
+  function toast(m){const t=$("#toast");t.textContent=m;t.classList.remove("hidden");clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.add("hidden"),2800);}
+
+  const themeBtn=$("#themeBtn");
+  function applyTheme(t){document.documentElement.setAttribute("data-theme",t);themeBtn.textContent=t==="dark"?"☀️":"🌙";try{localStorage.setItem("mcc-portal-theme",t);}catch(e){}}
+  themeBtn.addEventListener("click",()=>applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark"));
+  applyTheme(localStorage.getItem("mcc-portal-theme")||"light");
+
+  store.onChange(render);
+  store.init().then(({mode,boardId})=>{
+    const b=$("#syncBadge");
+    if(mode==="firestore"){b.className="badge live";b.textContent="● LIVE 共有中";}
+    else{b.className="badge local";b.textContent="● ローカル保存のみ";}
+    $("#curBoard").textContent=boardId;
+    $("#boardLink").href="index.html"+location.search;
+    const cfg=window.TFT_CONFIG||{};
+    $("#apiDesc").innerHTML=C.Riot.enabled()
+      ? `Worker: <code>${cfg.workerUrl}</code> ／ region: <b>${cfg.region||"asia"}</b>`
+      : `<b style="color:var(--gold)">Worker URL 未設定</b>：config.js に設定すると自動取得が有効になります。`;
+    render(store.state);
+  });
+
+  $("#mode").addEventListener("change",e=>{
+    if(e.target.value===store.state.mode)return;
+    if(!confirm("モード変更で組卓・順位がリセットされます。続行？")){e.target.value=store.state.mode;return;}
+    store.setSettings({mode:e.target.value});
+  });
+  $("#matchCount").addEventListener("change",e=>store.setSettings({matchCount:+e.target.value}));
+  $("#tableCount").addEventListener("change",e=>store.setSettings({tableCount:+e.target.value}));
+
+  $("#addBtn").onclick=()=>{const n=$("#newName").value.trim();if(!n)return;store.addPlayer(n,$("#newRiot").value.trim());$("#newName").value="";$("#newRiot").value="";$("#newName").focus();};
+  $("#newRiot").addEventListener("keydown",e=>{if(e.key==="Enter")$("#addBtn").click();});
+  $("#bulkBtn").onclick=()=>{
+    const lines=$("#bulk").value.split("\n").map(x=>x.trim()).filter(Boolean);
+    lines.forEach(l=>{const [name,riot]=l.split(",").map(x=>(x||"").trim());if(name)store.addPlayer(name,riot||"");});
+    $("#bulk").value="";toast(lines.length+"件を追加しました");
+  };
+
+  $("#testBtn").onclick=async()=>{
+    if(!C.Riot.enabled()){toast("Worker URL を config.js に設定してください");return;}
+    const withId=store.state.roster.find(p=>p.riotId&&p.riotId.includes("#"));
+    if(!withId){toast("テスト用にRiot ID登録済みの選手が必要です");return;}
+    $("#apiStatus").textContent="テスト中…";
+    try{const pu=await C.Riot.puuid(withId.riotId);$("#apiStatus").textContent="OK: "+withId.riotId+" → "+pu.slice(0,12)+"…";toast("接続成功");}
+    catch(e){$("#apiStatus").textContent="失敗: "+e.message;toast("接続失敗");}
+  };
+  $("#fetchAllBtn").onclick=async()=>{
+    if(!C.Riot.enabled()){toast("Worker URL 未設定");return;}
+    const s=store.state;
+    for(let m=0;m<s.matchCount;m++)for(let t=0;t<s.tableCount;t++){
+      const tb=s.matches[m].tables[t];
+      const players=tb.seats.filter(Boolean).map(pid=>{const p=C.playerById(s,pid);return{pid,riotId:p?p.riotId:""};});
+      if(players.filter(p=>p.riotId&&p.riotId.includes("#")).length<2)continue;
+      $("#apiStatus").textContent=`第${m+1}試合 卓${t+1} 取得中…`;
+      try{const res=await C.Riot.autoDetectTable(players);if(res)Object.entries(res.placements).forEach(([pid,r])=>store.setPlacement(m,t,pid,r));}catch(e){console.error(e);}
+    }
+    $("#apiStatus").textContent="完了";toast("自動取得が完了しました");
+  };
+
+  $("#exportBtn").onclick=()=>{
+    const blob=new Blob([JSON.stringify(store.state,null,2)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="tft-board-"+store.boardId+".json";a.click();
+  };
+  $("#importFile").addEventListener("change",e=>{
+    const f=e.target.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{try{store.importState(JSON.parse(r.result));toast("インポート完了");}catch(err){toast("読み込み失敗: "+err.message);}};r.readAsText(f);
+  });
+  $("#switchBtn").onclick=()=>{const id=$("#boardIdInput").value.trim();if(!id)return;location.search="?board="+encodeURIComponent(id);};
+  $("#clearResultsBtn").onclick=()=>{if(confirm("全試合の順位をクリアします（組卓は残ります）。よろしいですか？"))store.clearAllResults();};
+  $("#resetBtn").onclick=()=>{if(confirm("このボードを完全に初期化します。元に戻せません。よろしいですか？"))store.resetBoard();};
+
+  function render(s){
+    $("#mode").value=s.mode;$("#matchCount").value=s.matchCount;$("#tableCount").value=s.tableCount;
+    if(curMatch>=s.matchCount)curMatch=s.matchCount-1;
+    renderRoster(s);renderMatchSel(s);renderManual(s);
+  }
+
+  function renderRoster(s){
+    const body=$("#rosterBody");body.innerHTML="";
+    if(!s.roster.length){body.innerHTML=`<tr><td colspan="4" class="muted">まだ選手がいません</td></tr>`;return;}
+    s.roster.forEach(p=>{
+      const tr=el("tr");
+      const tdN=el("td","mst-name");const inN=el("input");inN.value=p.name;inN.onchange=()=>store.updatePlayer(p.id,{name:inN.value.trim()||p.name});tdN.appendChild(inN);tr.appendChild(tdN);
+      const tdR=el("td","mst-riot");const inR=el("input");inR.value=p.riotId||"";inR.placeholder="Name#TAG";inR.onchange=()=>store.updatePlayer(p.id,{riotId:inR.value.trim()});tdR.appendChild(inR);tr.appendChild(tdR);
+      const tdS=el("td");const ok=p.riotId&&p.riotId.includes("#");tdS.appendChild(el("span","tag "+(ok?"ok":"no"),ok?"API可":"ID未"));tr.appendChild(tdS);
+      const tdX=el("td");const del=el("button","btn danger sm","削除");del.onclick=()=>{if(confirm(`「${p.name}」を削除しますか？`))store.removePlayer(p.id);};tdX.appendChild(del);tr.appendChild(tdX);
+      body.appendChild(tr);
+    });
+  }
+
+  function renderMatchSel(s){
+    const w=$("#matchSel");w.innerHTML="";
+    for(let m=0;m<s.matchCount;m++){const b=el("button","mtab"+(m===curMatch?" on":""),"第"+(m+1)+"試合");b.onclick=()=>{curMatch=m;render(s);};w.appendChild(b);}
+  }
+
+  function renderManual(s){
+    const wrap=$("#manualGrid");wrap.innerHTML="";
+    for(let t=0;t<s.tableCount;t++){
+      const tb=s.matches[curMatch].tables[t];
+      const block=el("div","tblock");block.appendChild(el("h4","","卓 "+(t+1)));
+      if(s.mode==="doubleup"){
+        for(let g=0;g<4;g++){
+          const a=tb.seats[g*2],b=tb.seats[g*2+1];if(!a&&!b)continue;
+          block.appendChild(el("div","grp-label","PAIR "+(g+1)));
+          const names=[a,b].filter(Boolean).map(pid=>C.nameOf(s,pid)).join(" & ");
+          block.appendChild(rankRow(names,tb.placements[a]||tb.placements[b]||"",4,v=>{[a,b].filter(Boolean).forEach(pid=>store.setPlacement(curMatch,t,pid,v));}));
+        }
+      }else{
+        const ranges=s.mode==="team"?[["TEAM 1",0,4],["TEAM 2",4,8]]:[[null,0,8]];
+        ranges.forEach(([lbl,from,to])=>{
+          if(lbl)block.appendChild(el("div","grp-label",lbl));
+          for(let i=from;i<to;i++){const pid=tb.seats[i];if(!pid)continue;block.appendChild(rankRow(C.nameOf(s,pid),tb.placements[pid]||"",8,v=>store.setPlacement(curMatch,t,pid,v)));}
+        });
+      }
+      if(!tb.seats.some(Boolean))block.appendChild(el("div","muted","選手未配置"));
+      wrap.appendChild(block);
+    }
+  }
+
+  function rankRow(name,val,max,onChange){
+    const row=el("div");row.style.cssText="display:flex;align-items:center;gap:8px;margin:3px 0";
+    const inp=el("input","rinput num");inp.type="number";inp.min=1;inp.max=max;inp.value=val;inp.placeholder="–";inp.onchange=()=>onChange(inp.value);
+    row.appendChild(inp);row.appendChild(el("span","",name));return row;
+  }
+})();
+</script>
+</body>
+</html>

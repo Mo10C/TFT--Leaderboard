@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TFT リーダーボード ｜ マウンテンチョンク校</title>
+<meta name="description" content="もと先生のTFT大会用リーダーボード">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F2FA;--bg-2:#E9E7F6;--surface:#FFFFFF;--surface-2:#F7F6FD;
+  --border:#E7E3F3;--border-strong:#D8D3EC;--ink:#2C2A47;--muted:#807D9C;
+  --pink:#D94E97;--pink-deep:#B83C7E;--pink-soft:#F4B7D6;
+  --cyan:#1FA3B4;--cyan-deep:#188A99;--cyan-soft:#A6E1E8;--danger:#E25563;--gold:#E0A52E;
+  --grad:linear-gradient(135deg,var(--pink),var(--cyan));
+  --shadow:0 16px 36px -22px rgba(70,50,110,.35);--shadow-soft:0 8px 22px -14px rgba(70,50,110,.28);
+  --hexline:rgba(120,90,170,.16);
+}
+:root[data-theme="dark"]{
+  --bg:#16121F;--bg-2:#0F0C17;--surface:#1F1A2C;--surface-2:#272138;
+  --border:#352C49;--border-strong:#473A60;--ink:#EFEAF8;--muted:#9C95B4;
+  --pink:#F26DB0;--pink-deep:#F58CC2;--pink-soft:#7A3560;
+  --cyan:#4FD2DF;--cyan-deep:#7BE0E9;--cyan-soft:#1E5A64;--danger:#F2727F;--gold:#F2C661;
+  --grad:linear-gradient(135deg,var(--pink),var(--cyan));
+  --shadow:0 18px 40px -22px rgba(0,0,0,.7);--shadow-soft:0 10px 26px -16px rgba(0,0,0,.6);
+  --hexline:rgba(180,150,230,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
+  background:radial-gradient(900px 480px at 88% -8%,color-mix(in srgb,var(--pink) 14%,transparent),transparent 60%),
+    radial-gradient(820px 460px at -8% 6%,color-mix(in srgb,var(--cyan) 13%,transparent),transparent 58%),var(--bg);
+  color:var(--ink);min-height:100vh;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.num{font-family:"Space Grotesk",sans-serif;font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:1180px;margin:0 auto;padding:clamp(18px,4vw,38px) clamp(16px,4vw,40px) 84px}
+
+/* ---------- hero ---------- */
+.hero{position:relative;border:1px solid var(--border);border-radius:26px;
+  background:radial-gradient(420px 220px at 92% 120%,color-mix(in srgb,var(--cyan) 12%,transparent),transparent 70%),
+    linear-gradient(150deg,color-mix(in srgb,var(--pink) 8%,var(--surface)),var(--surface));
+  padding:clamp(22px,3.4vw,34px) clamp(20px,3.4vw,38px);overflow:hidden;box-shadow:var(--shadow)}
+.hero::before{content:"";position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cpath d='M28 0L56 16v32L28 64 0 48V16z M28 64L56 80v32M28 64L0 80v32' fill='none' stroke='%23000' stroke-opacity='1' stroke-width='1'/%3E%3C/svg%3E");
+  background-size:56px 96px;color:var(--hexline);
+  -webkit-mask-image:linear-gradient(120deg,#000 0%,transparent 58%);mask-image:linear-gradient(120deg,#000 0%,transparent 58%);
+  opacity:.6;mix-blend-mode:luminosity}
+:root[data-theme="dark"] .hero::before{mix-blend-mode:screen;opacity:.5}
+.hero>*{position:relative;z-index:1}
+.hero-row{display:flex;align-items:flex-end;gap:clamp(14px,3vw,30px)}
+.hero-figure{position:relative;flex:none;align-self:flex-end}
+.hero-figure img{height:clamp(120px,18vw,190px);width:auto;display:block;filter:drop-shadow(0 14px 18px rgba(80,40,110,.22))}
+.bubble{position:absolute;top:-6px;left:70%;white-space:nowrap;background:var(--grad);color:#fff;font-weight:700;
+  font-size:12.5px;padding:7px 13px;border-radius:13px 13px 13px 3px;box-shadow:var(--shadow-soft)}
+.hero-text{flex:1;min-width:0}
+.logorow{display:flex;align-items:center;gap:13px;margin-bottom:4px}
+.logohex{width:46px;height:46px;flex:none;display:grid;place-items:center;background:var(--grad);color:#fff;font-size:20px;
+  clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);box-shadow:0 6px 16px -6px color-mix(in srgb,var(--pink) 60%,transparent)}
+.eyebrow{font-family:"Space Grotesk",sans-serif;letter-spacing:.3em;text-transform:uppercase;font-size:11px;color:var(--pink);font-weight:600}
+h1{font-size:clamp(23px,4.4vw,36px);font-weight:900;letter-spacing:-.01em;line-height:1.16;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:var(--muted);margin-top:7px;font-size:clamp(13px,2.3vw,15px)}
+.themebtn{position:absolute;top:clamp(18px,3vw,26px);right:clamp(18px,3vw,26px);z-index:2;width:42px;height:42px;
+  border-radius:13px;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);font-size:18px;cursor:pointer;
+  display:grid;place-items:center;transition:.16s;box-shadow:var(--shadow-soft)}
+.themebtn:hover{border-color:var(--pink);transform:translateY(-1px)}
+
+/* ---------- toolbar ---------- */
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:22px}
+.modeset{display:flex;gap:8px;flex-wrap:wrap}
+.mode{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;padding:9px 16px;border-radius:11px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:14px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
+.mode:hover{border-color:var(--border-strong);color:var(--ink)}
+.mode.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--pink) 55%,transparent)}
+.spacer{flex:1}
+.badge{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:600;letter-spacing:.04em;padding:6px 11px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--surface)}
+.badge.live{border-color:color-mix(in srgb,var(--cyan) 45%,transparent);color:var(--cyan-deep);background:color-mix(in srgb,var(--cyan) 10%,transparent)}
+.badge.local{border-color:color-mix(in srgb,var(--gold) 50%,transparent);color:var(--gold);background:color-mix(in srgb,var(--gold) 12%,transparent)}
+.linkbtn{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;font-size:13px;font-weight:600;color:var(--muted);
+  padding:8px 13px;border-radius:11px;border:1px solid var(--border);background:var(--surface);transition:.16s;box-shadow:var(--shadow-soft)}
+.linkbtn:hover{border-color:var(--pink);color:var(--pink)}
+
+/* ---------- panels ---------- */
+.panel{margin-top:18px;border:1px solid var(--border);border-radius:20px;background:var(--surface);box-shadow:var(--shadow-soft);padding:clamp(14px,2.4vw,20px)}
+.settings{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-family:"Space Grotesk",sans-serif;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+input,select{background:var(--surface);border:1px solid var(--border);border-radius:11px;color:var(--ink);font-family:inherit;font-size:14px;padding:10px 12px}
+input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 3px color-mix(in srgb,var(--pink) 18%,transparent)}
+.field input[type=number]{width:96px}
+.hint{color:var(--muted);font-size:13px}
+
+/* ---------- main tabs ---------- */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 4px}
+.tab{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;padding:10px 20px;border-radius:12px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:15px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
+.tab:hover{border-color:var(--border-strong);color:var(--ink)}
+.tab.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--cyan) 55%,transparent)}
+
+/* ---------- chip pool ---------- */
+.pool-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.pool-head h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:9px}
+.pool-head h3::before{content:"";width:14px;height:16px;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.addrow{display:flex;gap:8px;flex:1;min-width:240px}
+.addrow input{flex:1}
+.pool{display:flex;flex-wrap:wrap;gap:9px;min-height:44px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-strong);color:var(--ink);
+  padding:7px 12px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:var(--shadow-soft);cursor:grab;user-select:none;transition:.14s}
+.chip:hover{border-color:var(--pink)}
+.chip::before{content:"";width:9px;height:10px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.chip.placed{opacity:.4}
+.chip.placed::before{background:var(--border-strong)}
+.chip.sel{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--pink) 55%,transparent)}
+.chip.sel::before{background:#fff}
+.chip.dragging{opacity:.4}
+.chip .x{font-size:12px;color:var(--muted);width:17px;height:17px;display:grid;place-items:center;border-radius:50%;line-height:1}
+.chip .x:hover{color:#fff;background:var(--danger)}
+.chip.sel .x{color:rgba(255,255,255,.85)}
+.pool-empty{color:var(--muted);font-size:13px}
+
+/* ---------- match selector ---------- */
+.matchsel{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 14px}
+.mtab{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;padding:8px 15px;border-radius:11px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:13.5px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
+.mtab:hover{border-color:var(--border-strong);color:var(--ink)}
+.mtab.on{background:var(--grad);color:#fff;border-color:transparent}
+
+/* ---------- tables ---------- */
+.tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.table{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-soft);overflow:hidden}
+.table-h{display:flex;align-items:center;gap:11px;padding:14px 16px;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--cyan) 7%,var(--surface)),var(--surface));border-bottom:1px solid var(--border)}
+.table-h .thx{width:30px;height:34px;flex:none;display:grid;place-items:center;background:var(--grad);color:#fff;font-family:"Space Grotesk";font-weight:700;font-size:14px;
+  clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.table-h h3{font-size:16px;font-weight:800}
+.table-h .cnt{margin-left:auto;font-family:"Space Grotesk";font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 10px}
+.grp{padding:12px 16px}
+.grp-label{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:600;color:var(--cyan-deep);letter-spacing:.1em;margin:2px 0 8px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.grp-label::before{content:"";width:9px;height:10px;background:var(--cyan);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.grp-label.t2{color:var(--pink-deep)}
+.grp-label.t2::before{background:var(--pink)}
+.seats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seat{display:flex;align-items:center;gap:8px;min-height:42px;border:1px dashed var(--border-strong);border-radius:12px;padding:6px 10px;font-size:13.5px;background:var(--surface-2);transition:.14s}
+.seat.over{border-style:solid;border-color:var(--pink);background:color-mix(in srgb,var(--pink) 9%,var(--surface))}
+.seat.filled{border-style:solid;border-color:color-mix(in srgb,var(--cyan) 40%,var(--border));background:var(--surface)}
+.seat .sn{font-family:"Space Grotesk";font-size:10px;color:var(--muted);width:14px;flex:none}
+.seat .nm{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat.empty .nm{color:var(--muted);font-weight:400}
+.seat .rm{font-size:12px;color:var(--muted);cursor:pointer;flex:none;width:18px;height:18px;display:grid;place-items:center;border-radius:50%}
+.seat .rm:hover{color:#fff;background:var(--danger)}
+
+/* ---------- results ---------- */
+.subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.subtab{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;padding:7px 14px;border-radius:11px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:13.5px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
+.subtab:hover{border-color:var(--border-strong);color:var(--ink)}
+.subtab.on{background:var(--grad);color:#fff;border-color:transparent}
+.res-actions{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.btn{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;font-size:14px;font-weight:600;padding:10px 16px;border-radius:12px;
+  border:1px solid var(--border);background:var(--surface);color:var(--ink);box-shadow:var(--shadow-soft);transition:.16s}
+.btn:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.btn.sm{padding:7px 12px;font-size:12.5px}
+.btn.grad{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 10px 22px -10px color-mix(in srgb,var(--pink) 55%,transparent)}
+.btn.grad:hover{filter:brightness(1.05)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-soft);padding:clamp(16px,2.4vw,22px);margin-bottom:18px}
+.card h3{font-size:17px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card h3::before{content:"";width:14px;height:16px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.rtable{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.rtable th,.rtable td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.rtable tbody tr:last-child td{border-bottom:none}
+.rtable th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.rtable td.r{text-align:right}.rtable td.c{text-align:center}
+.rtable tbody tr:hover{background:color-mix(in srgb,var(--pink) 4%,transparent)}
+.rankhex{width:27px;height:30px;display:inline-grid;place-items:center;font-family:"Space Grotesk";font-weight:700;font-size:13px;color:var(--muted);
+  background:var(--bg-2);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.rankhex.r1{background:var(--grad);color:#fff}
+.rankhex.r2{background:color-mix(in srgb,var(--cyan) 28%,var(--surface));color:var(--cyan-deep)}
+.rankhex.r3{background:color-mix(in srgb,var(--pink) 26%,var(--surface));color:var(--pink-deep)}
+.pts{font-family:"Space Grotesk";font-weight:700;color:var(--cyan-deep)}
+.rinput{width:54px;text-align:center;padding:6px;border-radius:9px}
+.winner{display:inline-block;background:var(--grad);color:#fff;font-family:"Space Grotesk";font-weight:700;font-size:11px;padding:2px 9px;border-radius:999px;margin-left:8px}
+.teamblock{border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:12px;background:var(--surface-2)}
+.teamblock.win{border-color:color-mix(in srgb,var(--pink) 45%,var(--border));background:color-mix(in srgb,var(--pink) 5%,var(--surface))}
+.teamblock h4{font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.muted{color:var(--muted);font-size:13px}
+
+footer{margin-top:54px;padding-top:22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;
+  align-items:center;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+footer .brand{font-family:"Space Grotesk",sans-serif;letter-spacing:.05em;background:var(--grad);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:600}
+footer a:hover{color:var(--pink)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--pink);
+  color:var(--ink);padding:11px 20px;border-radius:13px;font-weight:600;font-size:14px;box-shadow:var(--shadow);z-index:50;max-width:90vw}
+.hidden{display:none!important}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+section[id^="view-"]{animation:rise .4s both}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:600px){
+  .tables{grid-template-columns:1fr}.seats{grid-template-columns:1fr}
+  .hero-row{flex-direction:column;align-items:center;text-align:center}
+  .hero-text{text-align:center}.logorow{justify-content:center}
+  .bubble{left:auto;right:6%;top:0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <button class="themebtn" id="themeBtn" title="テーマ切替" aria-label="テーマ切替">🌙</button>
+    <div class="hero-row">
+      <div class="hero-figure">
+        <span class="bubble">順位はここで集計！</span>
+        <img src="assets/moto-hero.png" alt="もと先生" onerror="this.style.display='none'">
+      </div>
+      <div class="hero-text">
+        <div class="logorow"><span class="logohex">⬡</span><span class="eyebrow">Mountain Chonk School</span></div>
+        <h1>TFT リーダーボード</h1>
+        <p class="subtitle">名前を並べて卓を組み、Riot APIで順位を自動集計</p>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="modeset" id="modes">
+        <button class="mode" data-mode="solo">個人戦</button>
+        <button class="mode" data-mode="team">チーム戦 4v4</button>
+        <button class="mode" data-mode="doubleup">ダブルアップ</button>
+      </div>
+      <span class="spacer"></span>
+      <span id="syncBadge" class="badge local">接続中…</span>
+      <button class="linkbtn" id="copyLink">共有リンク</button>
+      <a class="linkbtn" id="editorLink" href="editor.html">管理コンソール</a>
+    </div>
+  </header>
+
+  <div class="panel">
+    <div class="settings">
+      <div class="field"><label>試合数</label><input type="number" id="matchCount" min="1" max="20" value="3"></div>
+      <div class="field"><label>卓数</label><input type="number" id="tableCount" min="1" max="12" value="2"></div>
+      <div class="field" style="flex:1"></div>
+      <div class="hint" id="modeHint"></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="setup">組 卓</button>
+    <button class="tab" data-tab="results">結 果</button>
+  </div>
+
+  <!-- ============ SETUP ============ -->
+  <section id="view-setup">
+    <div class="panel">
+      <div class="pool-head">
+        <h3>選手 POP</h3>
+        <div class="addrow">
+          <input id="nameInput" placeholder="名前を入力（Riot IDは管理コンソールで登録）" maxlength="24">
+          <button class="btn grad" id="addBtn">追加</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-bottom:10px">チップをタップ → 席をタップで配置（PCはドラッグも可）。配置済みは半透明。</div>
+      <div class="pool" id="pool"></div>
+    </div>
+
+    <div class="matchsel" id="matchSel"></div>
+    <div class="tables" id="tables"></div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="view-results" class="hidden">
+    <div class="res-actions">
+      <button class="btn grad" id="fetchAllBtn">全卓を自動取得（Riot API）</button>
+      <span class="hint" id="apiHint"></span>
+    </div>
+    <div class="subtabs" id="resSubtabs"></div>
+    <div id="resBody"></div>
+  </section>
+
+  <footer>
+    <span class="brand">⬡ MOUNTAIN CHONK SCHOOL</span>
+    <span>ボードID: <b id="boardIdLabel" class="num"></b> ／ 同じURLを共有すれば全員が同じボードを操作・閲覧できます</span>
+  </footer>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script src="tft-core.js"></script>
+<script>
+(function(){
+  const C=window.TFTCore, store=C.makeStore();
+  let curTab="setup", curMatch=0, curResMatch="overall", selectedChip=null;
+  const $=s=>document.querySelector(s);
+  const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;};
+  function toast(m){const t=$("#toast");t.textContent=m;t.classList.remove("hidden");clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.add("hidden"),2600);}
+
+  /* ---- theme ---- */
+  const themeBtn=$("#themeBtn");
+  function applyTheme(t){document.documentElement.setAttribute("data-theme",t);themeBtn.textContent=t==="dark"?"☀️":"🌙";try{localStorage.setItem("mcc-portal-theme",t);}catch(e){}}
+  themeBtn.addEventListener("click",()=>applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark"));
+  applyTheme(localStorage.getItem("mcc-portal-theme")||"light");
+
+  /* ---- init ---- */
+  store.onChange(render);
+  store.init().then(({mode,boardId})=>{
+    const b=$("#syncBadge");
+    if(mode==="firestore"){b.className="badge live";b.textContent="● LIVE 共有中";}
+    else{b.className="badge local";b.textContent="● ローカル保存のみ";}
+    $("#boardIdLabel").textContent=boardId;
+    $("#editorLink").href="editor.html"+location.search;
+    $("#apiHint").textContent=C.Riot.enabled()?"":"※ Worker URL未設定のため手入力のみ（config.js）";
+    render(store.state);
+  });
+
+  /* ---- header ---- */
+  $("#copyLink").onclick=()=>{navigator.clipboard?.writeText(location.href);toast("共有リンクをコピーしました");};
+  $("#modes").addEventListener("click",e=>{
+    const m=e.target.closest(".mode");if(!m)return;
+    if(m.dataset.mode===store.state.mode)return;
+    if(!confirm("モードを変更すると現在の組卓・順位はリセットされます。続行しますか？"))return;
+    store.setSettings({mode:m.dataset.mode});
+  });
+  $("#matchCount").addEventListener("change",e=>store.setSettings({matchCount:+e.target.value}));
+  $("#tableCount").addEventListener("change",e=>store.setSettings({tableCount:+e.target.value}));
+
+  /* ---- main tabs ---- */
+  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+    curTab=t.dataset.tab;
+    document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===t));
+    $("#view-setup").classList.toggle("hidden",curTab!=="setup");
+    $("#view-results").classList.toggle("hidden",curTab!=="results");
+    render(store.state);
+  });
+
+  /* ---- add ---- */
+  $("#addBtn").onclick=addPlayer;
+  $("#nameInput").addEventListener("keydown",e=>{if(e.key==="Enter")addPlayer();});
+  function addPlayer(){const v=$("#nameInput").value.trim();if(!v)return;store.addPlayer(v);$("#nameInput").value="";$("#nameInput").focus();}
+
+  /* ---- fetch ---- */
+  $("#fetchAllBtn").onclick=async()=>{
+    if(!C.Riot.enabled()){toast("config.js に Worker URL を設定してください");return;}
+    const s=store.state,mi=(curResMatch==="overall")?null:+curResMatch;
+    const targets=(mi==null)?s.matches.map((_,i)=>i):[mi];
+    for(const m of targets)for(let t=0;t<s.tableCount;t++)await fetchTable(m,t);
+  };
+  async function fetchTable(matchIdx,tableIdx){
+    const s=store.state,tb=s.matches[matchIdx].tables[tableIdx];
+    const players=tb.seats.filter(Boolean).map(pid=>{const p=C.playerById(s,pid);return{pid,riotId:p?p.riotId:""};});
+    if(players.filter(p=>p.riotId&&p.riotId.includes("#")).length<2){toast(`第${matchIdx+1}試合 卓${tableIdx+1}: Riot ID登録済みが2人未満`);return;}
+    try{
+      toast(`第${matchIdx+1}試合 卓${tableIdx+1} を照合中…`);
+      const res=await C.Riot.autoDetectTable(players);
+      if(!res){toast(`第${matchIdx+1}試合 卓${tableIdx+1}: 全員を含む試合が見つかりません`);return;}
+      Object.entries(res.placements).forEach(([pid,rank])=>store.setPlacement(matchIdx,tableIdx,pid,rank));
+      toast(`第${matchIdx+1}試合 卓${tableIdx+1} 反映完了`);
+    }catch(e){toast("取得失敗: "+e.message);}
+  }
+
+  /* ================= RENDER ================= */
+  function render(s){
+    $("#matchCount").value=s.matchCount;$("#tableCount").value=s.tableCount;
+    document.querySelectorAll(".mode").forEach(m=>m.classList.toggle("on",m.dataset.mode===s.mode));
+    $("#modeHint").textContent=modeHint(s.mode);
+    if(curMatch>=s.matchCount)curMatch=s.matchCount-1;
+    if(curTab==="setup"){renderPool(s);renderMatchSel(s);renderTables(s);}
+    else renderResults(s);
+  }
+  function modeHint(mode){
+    if(mode==="solo")return "個人戦：1位8pt 〜 8位1pt";
+    if(mode==="team")return "チーム戦：4人×2チーム／各員の獲得pt合計が多いチームの勝ち";
+    return "ダブルアップ：4ペア／1位8・2位6・3位4・4位2pt（両者に付与）";
+  }
+
+  function renderPool(s){
+    const pool=$("#pool");pool.innerHTML="";
+    if(!s.roster.length){pool.appendChild(el("div","pool-empty","名前を追加するとここにPOPが出ます"));return;}
+    const placed=new Set();
+    s.matches[curMatch]?.tables.forEach(tb=>tb.seats.forEach(id=>id&&placed.add(id)));
+    s.roster.forEach(p=>{
+      const c=el("div","chip"+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":""));
+      c.draggable=true;c.dataset.pid=p.id;
+      c.appendChild(el("span","nm",p.name));
+      const x=el("span","x","×");
+      x.onclick=ev=>{ev.stopPropagation();if(confirm(`「${p.name}」を選手から削除しますか？`))store.removePlayer(p.id);};
+      c.appendChild(x);
+      c.onclick=()=>{selectedChip=(selectedChip===p.id)?null:p.id;renderPool(s);};
+      c.addEventListener("dragstart",e=>{c.classList.add("dragging");e.dataTransfer.setData("text/plain",JSON.stringify({pid:p.id,from:"pool"}));});
+      c.addEventListener("dragend",()=>c.classList.remove("dragging"));
+      pool.appendChild(c);
+    });
+  }
+
+  function renderMatchSel(s){
+    const w=$("#matchSel");w.innerHTML="";
+    for(let m=0;m<s.matchCount;m++){
+      const b=el("button","mtab"+(m===curMatch?" on":""),"第"+(m+1)+"試合");
+      b.onclick=()=>{curMatch=m;render(s);};w.appendChild(b);
+    }
+  }
+
+  function renderTables(s){
+    const wrap=$("#tables");wrap.innerHTML="";
+    for(let t=0;t<s.tableCount;t++){
+      const tb=s.matches[curMatch].tables[t];
+      const card=el("div","table");
+      const h=el("div","table-h");
+      h.appendChild(el("span","thx",String(t+1)));
+      h.appendChild(el("h3","","卓 "+(t+1)));
+      h.appendChild(el("span","cnt",tb.seats.filter(Boolean).length+"/8"));
+      card.appendChild(h);
+      if(s.mode==="solo")card.appendChild(seatGroup(s,t,null,0,8));
+      else if(s.mode==="team"){card.appendChild(seatGroup(s,t,"TEAM 1",0,4));card.appendChild(seatGroup(s,t,"TEAM 2",4,8,"t2"));}
+      else for(let g=0;g<4;g++)card.appendChild(seatGroup(s,t,"PAIR "+(g+1),g*2,g*2+2));
+      wrap.appendChild(card);
+    }
+  }
+
+  function seatGroup(s,tableIdx,label,from,to,cls){
+    const g=el("div","grp");
+    if(label)g.appendChild(el("div","grp-label"+(cls==="t2"?" t2":""),label));
+    const seats=el("div","seats"),tb=s.matches[curMatch].tables[tableIdx];
+    for(let i=from;i<to;i++){
+      const pid=tb.seats[i];
+      const seat=el("div","seat "+(pid?"filled":"empty"));seat.dataset.seat=i;
+      seat.appendChild(el("span","sn",String(i+1)));
+      seat.appendChild(el("span","nm",pid?C.nameOf(s,pid):"空席"));
+      if(pid){const rm=el("span","rm","×");rm.onclick=e=>{e.stopPropagation();store.clearSeat(curMatch,tableIdx,i);};seat.appendChild(rm);}
+      seat.onclick=()=>{
+        if(selectedChip){store.assignSeat(curMatch,tableIdx,i,selectedChip);selectedChip=null;}
+        else if(pid){selectedChip=pid;renderPool(s);}
+      };
+      seat.addEventListener("dragover",e=>{e.preventDefault();seat.classList.add("over");});
+      seat.addEventListener("dragleave",()=>seat.classList.remove("over"));
+      seat.addEventListener("drop",e=>{e.preventDefault();seat.classList.remove("over");
+        let d;try{d=JSON.parse(e.dataTransfer.getData("text/plain"));}catch(_){return;}
+        if(d&&d.pid)store.assignSeat(curMatch,tableIdx,i,d.pid);});
+      if(pid){seat.draggable=true;seat.addEventListener("dragstart",e=>e.dataTransfer.setData("text/plain",JSON.stringify({pid,from:"seat"})));}
+      seats.appendChild(seat);
+    }
+    g.appendChild(seats);return g;
+  }
+
+  /* ---- results ---- */
+  function renderResults(s){
+    const st=$("#resSubtabs");st.innerHTML="";
+    const ov=el("button","subtab"+(curResMatch==="overall"?" on":""),"全体順位");
+    ov.onclick=()=>{curResMatch="overall";renderResults(s);};st.appendChild(ov);
+    for(let m=0;m<s.matchCount;m++){
+      const b=el("button","subtab"+(curResMatch===String(m)?" on":""),"第"+(m+1)+"試合");
+      b.onclick=()=>{curResMatch=String(m);renderResults(s);};st.appendChild(b);
+    }
+    const body=$("#resBody");body.innerHTML="";
+    if(curResMatch==="overall")body.appendChild(overallView(s));
+    else body.appendChild(matchView(s,+curResMatch));
+  }
+
+  function overallView(s){
+    const card=el("div","card");card.appendChild(el("h3","","全体順位（個人累計pt）"));
+    const rows=C.overallStandings(s);
+    if(!rows.length){card.appendChild(el("div","muted","まだ結果がありません"));return card;}
+    const tbl=el("table","rtable");
+    tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th>試合数</th><th>合計pt</th></tr></thead>";
+    const tb=el("tbody");
+    rows.forEach((r,i)=>{
+      const tr=el("tr");
+      const rc=el("td","c");rc.appendChild(rankHex(i+1));tr.appendChild(rc);
+      tr.appendChild(el("td","",r.name));
+      tr.appendChild(el("td","c num",String(r.games)));
+      tr.appendChild(el("td","r num pts",String(r.points)));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);card.appendChild(tbl);return card;
+  }
+
+  function matchView(s,mi){
+    const frag=document.createDocumentFragment();
+    for(let t=0;t<s.tableCount;t++){
+      const card=el("div","card");
+      const h=el("h3");h.appendChild(document.createTextNode("第"+(mi+1)+"試合 ・ 卓"+(t+1)));
+      const fb=el("button","btn grad sm","この卓を自動取得");fb.style.marginLeft="auto";
+      fb.onclick=()=>fetchTable(mi,t);h.appendChild(fb);
+      card.appendChild(h);
+      const st=C.tableStandings(s,mi,t);
+      if(s.mode==="solo")card.appendChild(soloTable(s,mi,t,st));
+      else if(s.mode==="team")card.appendChild(teamTable(s,mi,t,st));
+      else card.appendChild(doubleTable(s,mi,t,st));
+      frag.appendChild(card);
+    }
+    return frag;
+  }
+
+  function soloTable(s,mi,ti,st){
+    if(!st.rows.length)return el("div","muted","この卓に選手がいません");
+    const tbl=el("table","rtable");
+    tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th>pt</th></tr></thead>";
+    const tb=el("tbody");
+    st.rows.forEach(r=>{
+      const tr=el("tr");
+      const rc=el("td","c");rc.appendChild(rankInput(mi,ti,r.pid,r.rank,8));tr.appendChild(rc);
+      tr.appendChild(el("td","",r.name));
+      tr.appendChild(el("td","r num pts",String(r.points)));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);return tbl;
+  }
+
+  function teamTable(s,mi,ti,st){
+    const wrap=el("div");
+    st.teams.forEach((tm,idx)=>{
+      const win=st.teams.length>1&&idx===0&&tm.total>st.teams[1].total;
+      const block=el("div","teamblock"+(win?" win":""));
+      const head=el("h4");head.appendChild(el("span","","TEAM "+tm.team));
+      const right=el("span","");right.innerHTML=`<span class="pts num">${tm.total}</span> pt`;
+      if(win)right.appendChild(el("span","winner","WIN"));
+      head.appendChild(right);block.appendChild(head);
+      const tbl=el("table","rtable");
+      tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th>pt</th></tr></thead>";
+      const tb=el("tbody");
+      tm.members.forEach(r=>{
+        const tr=el("tr");
+        const rc=el("td","c");rc.appendChild(rankInput(mi,ti,r.pid,r.rank,8));tr.appendChild(rc);
+        tr.appendChild(el("td","",r.name));
+        tr.appendChild(el("td","r num pts",String(r.points)));
+        tb.appendChild(tr);
+      });
+      tbl.appendChild(tb);block.appendChild(tbl);wrap.appendChild(block);
+    });
+    return wrap;
+  }
+
+  function doubleTable(s,mi,ti,st){
+    if(!st.pairs.length)return el("div","muted","この卓にペアがいません");
+    const tbl=el("table","rtable");
+    tbl.innerHTML="<thead><tr><th>ペア順位</th><th>ペア</th><th>pt</th></tr></thead>";
+    const tb=el("tbody");
+    st.pairs.forEach(p=>{
+      const tr=el("tr");
+      const rc=el("td","c");
+      const inp=el("input","rinput num");inp.type="number";inp.min=1;inp.max=4;inp.value=p.rank||"";inp.placeholder="–";
+      inp.onchange=()=>p.members.forEach(m=>store.setPlacement(mi,ti,m.pid,inp.value));
+      rc.appendChild(inp);tr.appendChild(rc);
+      tr.appendChild(el("td","",p.members.map(m=>m.name).join(" & ")));
+      tr.appendChild(el("td","r num pts",String(p.points)));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);return tbl;
+  }
+
+  function rankInput(mi,ti,pid,rank,max){
+    const inp=el("input","rinput num");inp.type="number";inp.min=1;inp.max=max||8;inp.value=rank||"";inp.placeholder="–";
+    inp.onchange=()=>store.setPlacement(mi,ti,pid,inp.value);return inp;
+  }
+  function rankHex(n){return el("span","rankhex"+(n<=3?(" r"+n):""),String(n));}
+
+})();
+</script>
+</body>
+</html>
