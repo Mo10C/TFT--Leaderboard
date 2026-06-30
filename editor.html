@@ -420,13 +420,24 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
         row.appendChild(wrap);
       }
     }else{ // doubleup
-      desc.textContent="席(1,2)=ペア1 …(7,8)=ペア4。固定ペアで全試合 通算します。";
-      [0,1,2,3].forEach(i=>{
-        const f=el("div","field");f.style.minWidth="150px";
-        f.appendChild(el("label","","ペア"+(i+1)+"の名前"));
+      const pairCount=s.tableCount*4;
+      desc.textContent="2人×"+pairCount+"ペア（卓数×4）。1位8・2位6・3位4・4位2ptをペア両者に付与し、全体は通算ptで順位を競います。先にペアを編成してください。";
+      for(let i=0;i<pairCount;i++){
+        const tableIdx=Math.floor(i/4);
+        const wrap=el("div","field");wrap.style.cssText="min-width:200px;border:1px solid var(--border);border-radius:12px;padding:10px;gap:6px;display:flex;flex-direction:column";
+        wrap.appendChild(el("label","","卓"+(tableIdx+1)+" ・ ペア"+(i+1)));
         const inp=el("input");inp.value=C.pairName(s,i);inp.onchange=()=>store.setPairName(i,inp.value);
-        f.appendChild(inp);row.appendChild(f);
-      });
+        wrap.appendChild(inp);
+        const pair=(s.pairs&&s.pairs[i])||{members:[]};
+        for(let k=0;k<2;k++){
+          const sel=el("select");
+          const optNone=el("option","","（空き）");optNone.value="";sel.appendChild(optNone);
+          s.roster.forEach(p=>{const o=el("option","",p.name);o.value=p.id;if(pair.members[k]===p.id)o.selected=true;sel.appendChild(o);});
+          sel.onchange=()=>store.setPairMember(i,k,sel.value||null);
+          wrap.appendChild(sel);
+        }
+        row.appendChild(wrap);
+      }
     }
   }
 
@@ -471,7 +482,7 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
       if(s.mode==="doubleup"){
         for(let g=0;g<4;g++){
           const a=tb.seats[g*2],b=tb.seats[g*2+1];if(!a&&!b)continue;
-          block.appendChild(el("div","grp-label",C.pairName(s,g)));
+          block.appendChild(el("div","grp-label",C.pairName(s,t*4+g)));
           const names=[a,b].filter(Boolean).map(pid=>C.nameOf(s,pid)).join(" & ");
           block.appendChild(rankRow(names,tb.placements[a]||tb.placements[b]||"",4,v=>{[a,b].filter(Boolean).forEach(pid=>store.setPlacement(curMatch,t,pid,v));}));
         }
