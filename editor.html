@@ -161,6 +161,13 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     </div>
   </section>
 
+  <!-- チーム名 / ペア名 -->
+  <section class="card" id="teamCard">
+    <h2>チーム名 / ペア名</h2>
+    <p class="desc" id="teamDesc"></p>
+    <div class="row" id="teamNameRow"></div>
+  </section>
+
   <!-- 選手マスタ -->
   <section class="card">
     <h2>選手マスタ</h2>
@@ -384,7 +391,32 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
   function render(s){
     $("#mode").value=s.mode;$("#matchCount").value=s.matchCount;$("#tableCount").value=s.tableCount;
     if(curMatch>=s.matchCount)curMatch=s.matchCount-1;
-    renderRoster(s);renderMatchSel(s);renderManual(s);
+    renderTeams(s);renderRoster(s);renderMatchSel(s);renderManual(s);
+  }
+
+  // チーム名（4v4=2）/ ペア名（ダブルアップ=4）の編集
+  function renderTeams(s){
+    const card=$("#teamCard"),row=$("#teamNameRow"),desc=$("#teamDesc");
+    row.innerHTML="";
+    if(s.mode==="solo"){card.classList.add("hidden");return;}
+    card.classList.remove("hidden");
+    if(s.mode==="team"){
+      desc.textContent="左4席＝チーム1／右4席＝チーム2。固定チームで全試合 通算します。";
+      [0,1].forEach(i=>{
+        const f=el("div","field");f.style.minWidth="180px";
+        f.appendChild(el("label","","チーム"+(i+1)+"の名前"));
+        const inp=el("input");inp.value=C.teamName(s,i);inp.onchange=()=>store.setTeamName(i,inp.value);
+        f.appendChild(inp);row.appendChild(f);
+      });
+    }else{ // doubleup
+      desc.textContent="席(1,2)=ペア1 …(7,8)=ペア4。固定ペアで全試合 通算します。";
+      [0,1,2,3].forEach(i=>{
+        const f=el("div","field");f.style.minWidth="150px";
+        f.appendChild(el("label","","ペア"+(i+1)+"の名前"));
+        const inp=el("input");inp.value=C.pairName(s,i);inp.onchange=()=>store.setPairName(i,inp.value);
+        f.appendChild(inp);row.appendChild(f);
+      });
+    }
   }
 
   function renderRoster(s){
@@ -428,12 +460,12 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
       if(s.mode==="doubleup"){
         for(let g=0;g<4;g++){
           const a=tb.seats[g*2],b=tb.seats[g*2+1];if(!a&&!b)continue;
-          block.appendChild(el("div","grp-label","PAIR "+(g+1)));
+          block.appendChild(el("div","grp-label",C.pairName(s,g)));
           const names=[a,b].filter(Boolean).map(pid=>C.nameOf(s,pid)).join(" & ");
           block.appendChild(rankRow(names,tb.placements[a]||tb.placements[b]||"",4,v=>{[a,b].filter(Boolean).forEach(pid=>store.setPlacement(curMatch,t,pid,v));}));
         }
       }else{
-        const ranges=s.mode==="team"?[["TEAM 1",0,4],["TEAM 2",4,8]]:[[null,0,8]];
+        const ranges=s.mode==="team"?[[C.teamName(s,0),0,4],[C.teamName(s,1),4,8]]:[[null,0,8]];
         ranges.forEach(([lbl,from,to])=>{
           if(lbl)block.appendChild(el("div","grp-label",lbl));
           for(let i=from;i<to;i++){const pid=tb.seats[i];if(!pid)continue;block.appendChild(rankRow(C.nameOf(s,pid),tb.placements[pid]||"",8,v=>store.setPlacement(curMatch,t,pid,v)));}

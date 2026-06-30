@@ -113,6 +113,10 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
 .chip::before{content:"";width:9px;height:10px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
 .chip.has-av::before{display:none}
 .chip-av{width:20px;height:20px;flex:none;object-fit:cover;background:var(--surface-2);border-radius:50%}
+.av{width:20px;height:20px;flex:none;object-fit:cover;background:var(--surface-2);border-radius:50%;vertical-align:middle}
+.av.sm{width:18px;height:18px}
+.av.lg{width:26px;height:26px}
+.namecell{display:inline-flex;align-items:center;gap:7px}
 .chip.placed{opacity:.4}
 .chip.placed::before{background:var(--border-strong)}
 .chip.sel{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--pink) 55%,transparent)}
@@ -187,6 +191,9 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
 .teamblock{border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:12px;background:var(--surface-2)}
 .teamblock.win{border-color:color-mix(in srgb,var(--pink) 45%,var(--border));background:color-mix(in srgb,var(--pink) 5%,var(--surface))}
 .teamblock h4{font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.memberline{display:flex;flex-wrap:wrap;gap:6px}
+.memberchip{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 9px 3px 4px;font-size:12.5px;font-weight:600}
+.memberchip .av{width:18px;height:18px}
 .muted{color:var(--muted);font-size:13px}
 
 footer{margin-top:54px;padding-top:22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;
@@ -214,6 +221,10 @@ section[id^="view-"]{animation:rise .4s both}
   <header class="hero">
     <button class="themebtn" id="themeBtn" title="テーマ切替" aria-label="テーマ切替">🌙</button>
     <div class="hero-row">
+      <div class="hero-figure">
+        <span class="bubble">順位はここで集計！</span>
+        <img src="assets/moto-hero.png" alt="もと先生" onerror="this.style.display='none'">
+      </div>
       <div class="hero-text">
         <div class="logorow"><span class="logohex">⬡</span><span class="eyebrow">Mountain Chonk School</span></div>
         <h1>TFT リーダーボード</h1>
@@ -295,6 +306,9 @@ section[id^="view-"]{animation:rise .4s both}
   let curTab="setup", curMatch=0, curResMatch="overall", selectedChip=null;
   const $=s=>document.querySelector(s);
   const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;};
+  function avImg(url,cls){if(!url)return null;const im=el("img","av"+(cls?" "+cls:""));im.src=url;im.alt="";im.loading="lazy";im.onerror=()=>im.remove();return im;}
+  // 名前＋アバターのセル（テーブル用）
+  function nameWithAv(s,pid,name){const sp=el("span","namecell");const a=avImg(C.avatarOf(s,pid),"sm");if(a)sp.appendChild(a);sp.appendChild(el("span","",name!=null?name:C.nameOf(s,pid)));return sp;}
   function toast(m){const t=$("#toast");t.textContent=m;t.classList.remove("hidden");clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.add("hidden"),2600);}
 
   /* ---- theme ---- */
@@ -383,12 +397,7 @@ section[id^="view-"]{animation:rise .4s both}
     s.roster.forEach(p=>{
       const c=el("div","chip"+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":""));
       c.draggable=true;c.dataset.pid=p.id;
-      if(p.discordAvatar){
-        c.classList.add("has-av");
-        const im=el("img","chip-av");im.src=p.discordAvatar;im.alt="";im.loading="lazy";
-        im.onerror=()=>{c.classList.remove("has-av");im.remove();};
-        c.appendChild(im);
-      }
+      if(p.discordAvatar){const im=avImg(p.discordAvatar,"");if(im){im.className="chip-av";c.classList.add("has-av");c.appendChild(im);}}
       c.appendChild(el("span","nm",p.name));
       const x=el("span","x","×");
       x.onclick=ev=>{ev.stopPropagation();if(confirm(`「${p.name}」を選手から削除しますか？`))store.removePlayer(p.id);};
@@ -419,8 +428,8 @@ section[id^="view-"]{animation:rise .4s both}
       h.appendChild(el("span","cnt",tb.seats.filter(Boolean).length+"/8"));
       card.appendChild(h);
       if(s.mode==="solo")card.appendChild(seatGroup(s,t,null,0,8));
-      else if(s.mode==="team"){card.appendChild(seatGroup(s,t,"TEAM 1",0,4));card.appendChild(seatGroup(s,t,"TEAM 2",4,8,"t2"));}
-      else for(let g=0;g<4;g++)card.appendChild(seatGroup(s,t,"PAIR "+(g+1),g*2,g*2+2));
+      else if(s.mode==="team"){card.appendChild(seatGroup(s,t,C.teamName(s,0),0,4));card.appendChild(seatGroup(s,t,C.teamName(s,1),4,8,"t2"));}
+      else for(let g=0;g<4;g++)card.appendChild(seatGroup(s,t,C.pairName(s,g),g*2,g*2+2));
       wrap.appendChild(card);
     }
   }
@@ -433,6 +442,7 @@ section[id^="view-"]{animation:rise .4s both}
       const pid=tb.seats[i];
       const seat=el("div","seat "+(pid?"filled":"empty"));seat.dataset.seat=i;
       seat.appendChild(el("span","sn",String(i+1)));
+      if(pid){const a=avImg(C.avatarOf(s,pid),"sm");if(a)seat.appendChild(a);}
       seat.appendChild(el("span","nm",pid?C.nameOf(s,pid):"空席"));
       if(pid){const rm=el("span","rm","×");rm.onclick=e=>{e.stopPropagation();store.clearSeat(curMatch,tableIdx,i);};seat.appendChild(rm);}
       seat.onclick=()=>{
@@ -465,6 +475,9 @@ section[id^="view-"]{animation:rise .4s both}
   }
 
   function overallView(s){
+    if(s.mode==="team")return teamOverallView(s);
+    if(s.mode==="doubleup")return pairOverallView(s);
+    // solo
     const card=el("div","card");card.appendChild(el("h3","","全体順位（個人累計pt）"));
     const rows=C.overallStandings(s);
     if(!rows.length){card.appendChild(el("div","muted","まだ結果がありません"));return card;}
@@ -474,9 +487,53 @@ section[id^="view-"]{animation:rise .4s both}
     rows.forEach((r,i)=>{
       const tr=el("tr");
       const rc=el("td","c");rc.appendChild(rankHex(i+1));tr.appendChild(rc);
-      tr.appendChild(el("td","",r.name));
+      const nc=el("td");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
       tr.appendChild(el("td","c num",String(r.games)));
       tr.appendChild(el("td","r num pts",String(r.points)));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);card.appendChild(tbl);return card;
+  }
+
+  function teamOverallView(s){
+    const card=el("div","card");card.appendChild(el("h3","","チーム順位（全試合 通算）"));
+    const teams=C.teamOverall(s);
+    const anyPts=teams.some(t=>t.points>0||t.members.length>0);
+    if(!anyPts){card.appendChild(el("div","muted","まだ結果がありません"));return card;}
+    teams.forEach((t,idx)=>{
+      const win=idx===0&&teams.length>1&&t.points>teams[1].points;
+      const block=el("div","teamblock"+(win?" win":""));
+      const head=el("h4");
+      head.appendChild(el("span","",t.name));
+      const right=el("span","");right.innerHTML=`<span class="pts num">${t.points}</span> pt`;
+      if(win)right.appendChild(el("span","winner","1位"));
+      head.appendChild(right);block.appendChild(head);
+      const ml=el("div","memberline");
+      t.members.forEach(m=>{const chip=el("span","memberchip");const a=avImg(m.avatar,"sm");if(a)chip.appendChild(a);chip.appendChild(el("span","",m.name));ml.appendChild(chip);});
+      block.appendChild(ml);
+      card.appendChild(block);
+    });
+    return card;
+  }
+
+  function pairOverallView(s){
+    const card=el("div","card");card.appendChild(el("h3","","ペア順位（全試合 通算）"));
+    const pairs=C.pairOverall(s);
+    if(!pairs.length){card.appendChild(el("div","muted","まだ結果がありません"));return card;}
+    const tbl=el("table","rtable");
+    tbl.innerHTML="<thead><tr><th>順位</th><th>ペア</th><th>試合数</th><th>合計pt</th></tr></thead>";
+    const tb=el("tbody");
+    pairs.forEach((p,i)=>{
+      const tr=el("tr");
+      const rc=el("td","c");rc.appendChild(rankHex(i+1));tr.appendChild(rc);
+      const nc=el("td");
+      const wrap=el("div");wrap.style.cssText="display:flex;flex-direction:column;gap:2px";
+      wrap.appendChild(el("strong","",p.name));
+      const ml=el("span","memberline");
+      p.members.forEach(m=>{const chip=el("span","memberchip");const a=avImg(m.avatar,"sm");if(a)chip.appendChild(a);chip.appendChild(el("span","",m.name));ml.appendChild(chip);});
+      wrap.appendChild(ml);nc.appendChild(wrap);tr.appendChild(nc);
+      tr.appendChild(el("td","c num",String(p.games)));
+      tr.appendChild(el("td","r num pts",String(p.points)));
       tb.appendChild(tr);
     });
     tbl.appendChild(tb);card.appendChild(tbl);return card;
@@ -507,7 +564,7 @@ section[id^="view-"]{animation:rise .4s both}
     st.rows.forEach(r=>{
       const tr=el("tr");
       const rc=el("td","c");rc.appendChild(rankInput(mi,ti,r.pid,r.rank,8));tr.appendChild(rc);
-      tr.appendChild(el("td","",r.name));
+      const nc=el("td");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
       tr.appendChild(el("td","r num pts",String(r.points)));
       tb.appendChild(tr);
     });
@@ -519,7 +576,7 @@ section[id^="view-"]{animation:rise .4s both}
     st.teams.forEach((tm,idx)=>{
       const win=st.teams.length>1&&idx===0&&tm.total>st.teams[1].total;
       const block=el("div","teamblock"+(win?" win":""));
-      const head=el("h4");head.appendChild(el("span","","TEAM "+tm.team));
+      const head=el("h4");head.appendChild(el("span","",tm.name));
       const right=el("span","");right.innerHTML=`<span class="pts num">${tm.total}</span> pt`;
       if(win)right.appendChild(el("span","winner","WIN"));
       head.appendChild(right);block.appendChild(head);
@@ -529,7 +586,7 @@ section[id^="view-"]{animation:rise .4s both}
       tm.members.forEach(r=>{
         const tr=el("tr");
         const rc=el("td","c");rc.appendChild(rankInput(mi,ti,r.pid,r.rank,8));tr.appendChild(rc);
-        tr.appendChild(el("td","",r.name));
+        const nc=el("td");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
         tr.appendChild(el("td","r num pts",String(r.points)));
         tb.appendChild(tr);
       });
@@ -541,7 +598,7 @@ section[id^="view-"]{animation:rise .4s both}
   function doubleTable(s,mi,ti,st){
     if(!st.pairs.length)return el("div","muted","この卓にペアがいません");
     const tbl=el("table","rtable");
-    tbl.innerHTML="<thead><tr><th>ペア順位</th><th>ペア</th><th>pt</th></tr></thead>";
+    tbl.innerHTML="<thead><tr><th>順位</th><th>ペア</th><th>pt</th></tr></thead>";
     const tb=el("tbody");
     st.pairs.forEach(p=>{
       const tr=el("tr");
@@ -549,7 +606,12 @@ section[id^="view-"]{animation:rise .4s both}
       const inp=el("input","rinput num");inp.type="number";inp.min=1;inp.max=4;inp.value=p.rank||"";inp.placeholder="–";
       inp.onchange=()=>p.members.forEach(m=>store.setPlacement(mi,ti,m.pid,inp.value));
       rc.appendChild(inp);tr.appendChild(rc);
-      tr.appendChild(el("td","",p.members.map(m=>m.name).join(" & ")));
+      const nc=el("td");
+      const wrap=el("div");wrap.style.cssText="display:flex;flex-direction:column;gap:2px";
+      wrap.appendChild(el("strong","",p.name));
+      const ml=el("span","memberline");
+      p.members.forEach(m=>{const chip=el("span","memberchip");const a=avImg(C.avatarOf(s,m.pid),"sm");if(a)chip.appendChild(a);chip.appendChild(el("span","",m.name));ml.appendChild(chip);});
+      wrap.appendChild(ml);nc.appendChild(wrap);tr.appendChild(nc);
       tr.appendChild(el("td","r num pts",String(p.points)));
       tb.appendChild(tr);
     });
