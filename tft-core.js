@@ -198,15 +198,17 @@
       save();
     }
 
-    function addPlayer(name, riotId) {
+    function addPlayer(name, riotId, discordId) {
       name = (name || "").trim();
       if (!name) return null;
       const exists = state.roster.find(p => p.name === name);
       if (exists) {
-        if (riotId) { exists.riotId = riotId.trim(); save(); }
+        if (riotId) exists.riotId = riotId.trim();
+        if (discordId) exists.discordId = discordId.trim();
+        if (riotId || discordId) save();
         return exists;
       }
-      const p = { id: genId(), name, riotId: (riotId || "").trim() };
+      const p = { id: genId(), name, riotId: (riotId || "").trim(), discordId: (discordId || "").trim() };
       state.roster.push(p);
       save();
       return p;
@@ -441,11 +443,29 @@
     }
   };
 
+  /* =============================================================
+     Discord（Worker経由でアバターURLを解決）
+     ============================================================= */
+  const Discord = {
+    enabled() { return !!CFG.workerUrl; },
+    async avatar(userId) {
+      if (!CFG.workerUrl) throw new Error("Worker URL が未設定です（config.js）");
+      const u = new URL(CFG.workerUrl.replace(/\/$/, "") + "/avatar");
+      u.searchParams.set("userId", String(userId).trim());
+      const res = await fetch(u.toString());
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error("avatar " + res.status + " " + t.slice(0, 140));
+      }
+      return res.json(); // { id, username, avatarUrl }
+    }
+  };
+
   /* ---------- 公開 ---------- */
   window.TFTCore = {
     SEATS_PER_TABLE, MODES,
     pointsFor, makeStore,
     playerById, nameOf, tableStandings, overallStandings,
-    Riot
+    Riot, Discord
   };
 })();

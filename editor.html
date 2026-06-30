@@ -98,7 +98,9 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border
 th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--border)}
 tbody tr:last-child td{border-bottom:none}
 th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.mst-name input{width:150px}.mst-riot input{width:190px}
+.mst-name input{width:130px}.mst-riot input{width:170px}.mst-dc input{width:180px}
+.mst-name .cell{display:flex;align-items:center;gap:7px}
+.mst-av{width:24px;height:24px;flex:none;object-fit:cover;background:var(--surface-2);border-radius:50%}
 .tag{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--border)}
 .tag.ok{color:var(--cyan-deep);border-color:color-mix(in srgb,var(--cyan) 40%,transparent);background:color-mix(in srgb,var(--cyan) 10%,transparent)}
 .tag.no{color:var(--muted)}
@@ -162,19 +164,22 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
   <!-- 選手マスタ -->
   <section class="card">
     <h2>選手マスタ</h2>
-    <p class="desc">名前と Riot ID（<b>Name#TAG</b> 形式）を登録。Riot ID があると順位の自動取得が使えます。</p>
+    <p class="desc">名前と Riot ID（<b>Name#TAG</b>）を登録。Riot IDで順位の自動取得、Discord IDでPOPアイコンの自動取得が使えます。</p>
     <div class="row" style="margin-bottom:14px">
-      <div class="field" style="flex:1;min-width:140px"><label>名前</label><input id="newName" placeholder="プレイヤー名"></div>
-      <div class="field" style="flex:1;min-width:160px"><label>Riot ID（任意）</label><input id="newRiot" placeholder="例: Mo10C#JP1"></div>
+      <div class="field" style="flex:1;min-width:120px"><label>名前</label><input id="newName" placeholder="プレイヤー名"></div>
+      <div class="field" style="flex:1;min-width:140px"><label>Riot ID（任意）</label><input id="newRiot" placeholder="例: Mo10C#819"></div>
+      <div class="field" style="flex:1;min-width:140px"><label>Discord ID（任意）</label><input id="newDiscord" placeholder="例: 123456789012345678"></div>
       <button class="btn grad" id="addBtn">追加</button>
     </div>
     <table id="rosterTable">
-      <thead><tr><th>名前</th><th>Riot ID</th><th>状態</th><th></th></tr></thead>
+      <thead><tr><th>名前</th><th>Riot ID</th><th>Discord ID</th><th>状態</th><th></th></tr></thead>
       <tbody id="rosterBody"></tbody>
     </table>
     <div class="row" style="margin-top:12px;align-items:center">
       <button class="btn" id="checkAllBtn">全員のRiot IDを実在チェック</button>
+      <button class="btn" id="avatarAllBtn">Discordアイコンを取得</button>
       <span class="muted" id="checkStatus"></span>
+      <span class="muted" id="avatarStatus"></span>
     </div>
     <div style="margin-top:14px">
       <div class="field"><label>まとめて追加（1行1人 ／「名前,Riot ID」でID同時登録）</label>
@@ -272,8 +277,9 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
   $("#matchCount").addEventListener("change",e=>store.setSettings({matchCount:+e.target.value}));
   $("#tableCount").addEventListener("change",e=>store.setSettings({tableCount:+e.target.value}));
 
-  $("#addBtn").onclick=()=>{const n=$("#newName").value.trim();if(!n)return;store.addPlayer(n,$("#newRiot").value.trim());$("#newName").value="";$("#newRiot").value="";$("#newName").focus();};
+  $("#addBtn").onclick=()=>{const n=$("#newName").value.trim();if(!n)return;store.addPlayer(n,$("#newRiot").value.trim(),$("#newDiscord").value.trim());$("#newName").value="";$("#newRiot").value="";$("#newDiscord").value="";$("#newName").focus();};
   $("#newRiot").addEventListener("keydown",e=>{if(e.key==="Enter")$("#addBtn").click();});
+  $("#newDiscord").addEventListener("keydown",e=>{if(e.key==="Enter")$("#addBtn").click();});
   $("#bulkBtn").onclick=()=>{
     const lines=$("#bulk").value.split("\n").map(x=>x.trim()).filter(Boolean);
     lines.forEach(l=>{const [name,riot]=l.split(",").map(x=>(x||"").trim());if(name)store.addPlayer(name,riot||"");});
@@ -334,6 +340,35 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     toast(`チェック完了（実在${ok}・無効${ng}）`);
   };
 
+  // 全員のDiscordアイコンを取得して保存（押した時だけ）
+  $("#avatarAllBtn").onclick=async()=>{
+    if(!C.Discord.enabled()){toast("Worker URL が未設定です（config.js）");return;}
+    const targets=store.state.roster.filter(p=>p.discordId&&p.discordId.trim());
+    if(!targets.length){toast("Discord ID登録済みの選手がいません");return;}
+    let ok=0,ng=0;
+    for(let i=0;i<targets.length;i++){
+      const p=targets[i];
+      $("#avatarStatus").textContent=`取得中… (${i+1}/${targets.length})`;
+      try{
+        const r=await C.Discord.avatar(p.discordId.trim());
+        store.updatePlayer(p.id,{discordAvatar:r.avatarUrl||"",discordName:r.username||""});
+        ok++;
+      }catch(e){
+        const msg=e.message||"";
+        if(msg.includes("404")){ store.updatePlayer(p.id,{discordAvatar:""}); ng++; }
+        else{
+          $("#avatarStatus").textContent="中断：取得に失敗（"+msg.slice(0,60)+"）";
+          toast("中断しました（botトークン未設定や通信エラーの可能性）");
+          return;
+        }
+      }
+      renderRoster(store.state);
+      await new Promise(r=>setTimeout(r,150));   // レート制限に配慮
+    }
+    $("#avatarStatus").textContent=`完了：取得 ${ok} ／ 失敗 ${ng}`;
+    toast(`アイコン取得完了（成功${ok}・失敗${ng}）`);
+  };
+
   $("#exportBtn").onclick=()=>{
     const blob=new Blob([JSON.stringify(store.state,null,2)],{type:"application/json"});
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="tft-board-"+store.boardId+".json";a.click();
@@ -354,11 +389,15 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
 
   function renderRoster(s){
     const body=$("#rosterBody");body.innerHTML="";
-    if(!s.roster.length){body.innerHTML=`<tr><td colspan="4" class="muted">まだ選手がいません</td></tr>`;return;}
+    if(!s.roster.length){body.innerHTML=`<tr><td colspan="5" class="muted">まだ選手がいません</td></tr>`;return;}
     s.roster.forEach(p=>{
       const tr=el("tr");
-      const tdN=el("td","mst-name");const inN=el("input");inN.value=p.name;inN.onchange=()=>store.updatePlayer(p.id,{name:inN.value.trim()||p.name});tdN.appendChild(inN);tr.appendChild(tdN);
+      const tdN=el("td","mst-name");const cell=el("div","cell");
+      if(p.discordAvatar){const av=el("img","mst-av");av.src=p.discordAvatar;av.alt="";av.onerror=()=>av.remove();cell.appendChild(av);}
+      const inN=el("input");inN.value=p.name;inN.onchange=()=>store.updatePlayer(p.id,{name:inN.value.trim()||p.name});
+      cell.appendChild(inN);tdN.appendChild(cell);tr.appendChild(tdN);
       const tdR=el("td","mst-riot");const inR=el("input");inR.value=p.riotId||"";inR.placeholder="Name#TAG";inR.onchange=()=>{delete checkState[p.id];store.updatePlayer(p.id,{riotId:inR.value.trim()});};tdR.appendChild(inR);tr.appendChild(tdR);
+      const tdD=el("td","mst-dc");const inD=el("input");inD.value=p.discordId||"";inD.placeholder="Discord ID";inD.onchange=()=>store.updatePlayer(p.id,{discordId:inD.value.trim(),discordAvatar:""});tdD.appendChild(inD);tr.appendChild(tdD);
       const tdS=el("td");tdS.appendChild(stateTag(p));tr.appendChild(tdS);
       const tdX=el("td");const del=el("button","btn danger sm","削除");del.onclick=()=>{if(confirm(`「${p.name}」を削除しますか？`))store.removePlayer(p.id);};tdX.appendChild(del);tr.appendChild(tdX);
       body.appendChild(tr);

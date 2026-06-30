@@ -111,6 +111,8 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
   padding:7px 12px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:var(--shadow-soft);cursor:grab;user-select:none;transition:.14s}
 .chip:hover{border-color:var(--pink)}
 .chip::before{content:"";width:9px;height:10px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.chip.has-av::before{display:none}
+.chip-av{width:20px;height:20px;flex:none;object-fit:cover;background:var(--surface-2);border-radius:50%}
 .chip.placed{opacity:.4}
 .chip.placed::before{background:var(--border-strong)}
 .chip.sel{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--pink) 55%,transparent)}
@@ -381,6 +383,12 @@ section[id^="view-"]{animation:rise .4s both}
     s.roster.forEach(p=>{
       const c=el("div","chip"+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":""));
       c.draggable=true;c.dataset.pid=p.id;
+      if(p.discordAvatar){
+        c.classList.add("has-av");
+        const im=el("img","chip-av");im.src=p.discordAvatar;im.alt="";im.loading="lazy";
+        im.onerror=()=>{c.classList.remove("has-av");im.remove();};
+        c.appendChild(im);
+      }
       c.appendChild(el("span","nm",p.name));
       const x=el("span","x","×");
       x.onclick=ev=>{ev.stopPropagation();if(confirm(`「${p.name}」を選手から削除しますか？`))store.removePlayer(p.id);};

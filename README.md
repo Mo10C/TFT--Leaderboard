@@ -11,7 +11,7 @@
 | `editor.html` | 管理コンソール（選手マスタ・順位手入力・API設定・バックアップ） |
 | `tft-core.js` | 共通ロジック（得点計算・同期・API） |
 | `config.js` | **設定ファイル（ここだけ書き換える）** |
-| `worker.js` | Cloudflare Worker（Riot API 中継） |
+| `worker.js` | Cloudflare Worker（Riot API 中継 ＋ Discordアバター解決） |
 | `assets/` | もと先生アバター（`moto-hero.png` `moto-focus.png` `moto-rage.png`） |
 
 デザインは「マウンテンチョンク校 TOOLS」ポータルと統一（ライト基調＋ダーク切替、pink→cyanグラデ、六角モチーフ、Space Grotesk + Zen Kaku Gothic New）。テーマ設定はポータルと同じ `mcc-portal-theme` を共有します。
@@ -77,6 +77,21 @@ GitHub Pages は静的ファイルしか置けないため、
    - CLI: `npx wrangler secret put RIOT_API_KEY`
 4. 発行された URL（例 `https://tft-riot-proxy.xxx.workers.dev`）を `config.js` の `workerUrl` に貼る
 5. `editor.html` の「Riot API → 接続テスト」で確認
+
+### 4. Discordアイコン（任意・POPに各選手のDiscordアバターを表示）
+
+選手のDiscord IDから、POPの六角アイコンをそのDiscordアバターに自動で差し替えます。
+
+1. [Discord Developer Portal](https://discord.com/developers/applications) → アプリ → **Bot** → トークンを発行（Reset Token）
+   - サーバー専用アバターまで出すなら、そのBotをサーバーに招待（scope `bot`）。グローバルアバターだけなら招待不要
+2. Worker（上記と同じもの）に最新の `worker.js` をデプロイ → シークレットを追加
+   - `DISCORD_BOT_TOKEN` を **Secret** で登録
+   - （任意）`DISCORD_GUILD_ID` を通常の Variable で登録（サーバー専用アバターを優先したい場合）
+3. `editor.html` の選手マスタに各選手の **Discord ID** を入力
+4. 「**Discordアイコンを取得**」を押すと、取得したアバターURLが保存され、`index.html` のPOPに反映（全員に共有）
+
+> 動作確認: `https://（Worker）.workers.dev/avatar?userId=<DiscordユーザーID>` を開いて
+> `{"avatarUrl":"https://cdn.discordapp.com/..."}` が返ればOK。
 
 ---
 
