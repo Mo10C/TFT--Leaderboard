@@ -23,7 +23,7 @@ window.TFT_CONFIG = {
      worker.js をデプロイした後に出る URL を貼り付け。
      例: "https://tft-riot-proxy.あなたのサブドメイン.workers.dev"
      空のままだと結果は手入力のみになります（自動取得は無効）。 */
-  workerUrl: "tft-leaderboard.moto-moto-tennis.workers.dev",
+  workerUrl: "http://tft-leaderboard.moto-moto-tennis.workers.dev",
 
   /* ---- 3. Riot リージョン ----
      日本サーバーなら下記のままでOK。
