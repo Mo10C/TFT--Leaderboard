@@ -10,20 +10,19 @@ window.TFT_CONFIG = {
      firebaseConfig をまるごとここに貼り付けてください。
      空のままだと「ローカル保存モード（自分のブラウザ内のみ）」で動きます。 */
   firebase: {
-  apiKey: "AIzaSyCyZ7IbKh02V8fvILTCDTgLPKRuoNFS78Y",
-  authDomain: "tft-leaderboard-f6897.firebaseapp.com",
-  projectId: "tft-leaderboard-f6897",
-  storageBucket: "tft-leaderboard-f6897.firebasestorage.app",
-  messagingSenderId: "931359784793",
-  appId: "1:931359784793:web:d7c2bf264d517974a9d648",
-  measurementId: "G-T14B3XQY8R"
+    apiKey:            "",
+    authDomain:        "",
+    projectId:         "",
+    storageBucket:     "",
+    messagingSenderId: "",
+    appId:             ""
   },
 
   /* ---- 2. Cloudflare Worker（Riot API の中継先）----
      worker.js をデプロイした後に出る URL を貼り付け。
      例: "https://tft-riot-proxy.あなたのサブドメイン.workers.dev"
      空のままだと結果は手入力のみになります（自動取得は無効）。 */
-  workerUrl: "https://tft-riot-proxy.moto-moto-tennis.workers.dev",
+  workerUrl: "",
 
   /* ---- 3. Riot リージョン ----
      日本サーバーなら下記のままでOK。

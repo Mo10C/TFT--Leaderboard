@@ -11,7 +11,7 @@
 | `editor.html` | 管理コンソール（選手マスタ・順位手入力・API設定・バックアップ） |
 | `tft-core.js` | 共通ロジック（得点計算・同期・API） |
 | `config.js` | **設定ファイル（ここだけ書き換える）** |
-| `worker.js` | Cloudflare Worker（Riot API 中継 ＋ Discordアバター解決） |
+| `worker.js` | Cloudflare Worker（Riot API 中継） |
 | `assets/` | もと先生アバター（`moto-hero.png` `moto-focus.png` `moto-rage.png`） |
 
 デザインは「マウンテンチョンク校 TOOLS」ポータルと統一（ライト基調＋ダーク切替、pink→cyanグラデ、六角モチーフ、Space Grotesk + Zen Kaku Gothic New）。テーマ設定はポータルと同じ `mcc-portal-theme` を共有します。
@@ -78,21 +78,6 @@ GitHub Pages は静的ファイルしか置けないため、
 4. 発行された URL（例 `https://tft-riot-proxy.xxx.workers.dev`）を `config.js` の `workerUrl` に貼る
 5. `editor.html` の「Riot API → 接続テスト」で確認
 
-### 4. Discordアイコン（任意・POPに各選手のDiscordアバターを表示）
-
-選手のDiscord IDから、POPの六角アイコンをそのDiscordアバターに自動で差し替えます。
-
-1. [Discord Developer Portal](https://discord.com/developers/applications) → アプリ → **Bot** → トークンを発行（Reset Token）
-   - サーバー専用アバターまで出すなら、そのBotをサーバーに招待（scope `bot`）。グローバルアバターだけなら招待不要
-2. Worker（上記と同じもの）に最新の `worker.js` をデプロイ → シークレットを追加
-   - `DISCORD_BOT_TOKEN` を **Secret** で登録
-   - （任意）`DISCORD_GUILD_ID` を通常の Variable で登録（サーバー専用アバターを優先したい場合）
-3. `editor.html` の選手マスタに各選手の **Discord ID** を入力
-4. 「**Discordアイコンを取得**」を押すと、取得したアバターURLが保存され、`index.html` のPOPに反映（全員に共有）
-
-> 動作確認: `https://（Worker）.workers.dev/avatar?userId=<DiscordユーザーID>` を開いて
-> `{"avatarUrl":"https://cdn.discordapp.com/..."}` が返ればOK。
-
 ---
 
 ## 使い方
@@ -101,10 +86,15 @@ GitHub Pages は静的ファイルしか置けないため、
 1. 上部タブでモード選択（個人戦／チーム戦4v4／ダブルアップ）
 2. 試合数・卓数を設定
 3. 名前を入力して「追加」→ 選手POPが出る
-4. POPをタップ → 席をタップで配置（PCはドラッグも可）。第N試合タブで試合切替
-5. 「結果」タブ → 「全卓を自動取得」で Riot API から順位反映、または各順位を直接入力
-6. 結果は **全体順位** ＋ **各試合の卓別順位** が表として並ぶ
-7. 「共有リンク」を配れば全員が同じボードを操作・閲覧
+4. **個人戦**：各POPの**チェックボックス**でその試合の参加者を切替（既定=全員参加／登録＝全員でも毎試合は全員参加とは限らないため）。
+   POPをタップ → 席をタップで配置（PCはドラッグも可）。席は縦8並びで名前が長くても崩れない。第N試合タブで試合切替
+5. **自動組卓**（個人戦）：参加者バーの
+   - **① ランダム組卓**＝参加者をシャッフルして卓に均等配分
+   - **② pt近い順で組卓**（2試合目以降）＝直前までの累計ptが近い人を同卓に（高pt帯から卓1へ。同pt帯はランダム）
+   「全員 参加／全員 外す」「配置クリア」も同バーから
+6. 「結果」タブ → 「全卓を自動取得」で Riot API から順位反映、または各順位を直接入力
+7. 結果は **全体順位** ＋ **各試合の卓別順位** が表として並ぶ（順位／選手／試合数／pt の列幅は全表で固定）
+8. 「共有リンク」を配れば全員が同じボードを操作・閲覧
 
 ### 管理コンソール `editor.html`（主催者向け）
 - 選手マスタに名前＋Riot IDを事前登録（一括追加も可）

@@ -125,6 +125,14 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
 .chip .x{font-size:12px;color:var(--muted);width:17px;height:17px;display:grid;place-items:center;border-radius:50%;line-height:1}
 .chip .x:hover{color:#fff;background:var(--danger)}
 .chip.sel .x{color:rgba(255,255,255,.85)}
+.chip-check{appearance:none;-webkit-appearance:none;width:17px;height:17px;flex:none;border:1.5px solid var(--border-strong);border-radius:6px;
+  background:var(--surface);cursor:pointer;display:grid;place-items:center;transition:.14s;margin:-1px 0}
+.chip-check:checked{background:var(--grad);border-color:transparent}
+.chip-check:checked::after{content:"✓";color:#fff;font-size:11px;font-weight:800;line-height:1}
+.chip.has-check::before{display:none}
+.chip.absent{opacity:.5}
+.chip.absent .nm{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--muted)}
+.chip.sel .chip-check{border-color:rgba(255,255,255,.7)}
 .pool-empty{color:var(--muted);font-size:13px}
 
 /* ---------- match selector ---------- */
@@ -133,6 +141,15 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
   background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:13.5px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
 .mtab:hover{border-color:var(--border-strong);color:var(--ink)}
 .mtab.on{background:var(--grad);color:#fff;border-color:transparent}
+
+/* ---------- 参加者＋自動組卓バー ---------- */
+.assignbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:0}
+.assign-info{font-size:14px;color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.assign-h{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;font-weight:700;color:var(--cyan-deep)}
+.assign-info b{font-size:16px}
+.assign-acts{display:flex;gap:8px;flex-wrap:wrap}
+.assign-acts .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+.assign-acts .btn[disabled]:hover{border-color:var(--border);transform:none}
 
 /* ---------- tables ---------- */
 .tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
@@ -148,7 +165,7 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
 .grp-label::before{content:"";width:9px;height:10px;background:var(--cyan);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
 .grp-label.t2{color:var(--pink-deep)}
 .grp-label.t2::before{background:var(--pink)}
-.seats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seats{display:grid;grid-template-columns:1fr;gap:8px}
 .seat{display:flex;align-items:center;gap:8px;min-height:42px;border:1px dashed var(--border-strong);border-radius:12px;padding:6px 10px;font-size:13.5px;background:var(--surface-2);transition:.14s}
 .seat.over{border-style:solid;border-color:var(--pink);background:color-mix(in srgb,var(--pink) 9%,var(--surface))}
 .seat.filled{border-style:solid;border-color:color-mix(in srgb,var(--cyan) 40%,var(--border));background:var(--surface)}
@@ -174,11 +191,16 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
 .card{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-soft);padding:clamp(16px,2.4vw,22px);margin-bottom:18px}
 .card h3{font-size:17px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .card h3::before{content:"";width:14px;height:16px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
-.rtable{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.rtable{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border:1px solid var(--border);border-radius:14px;overflow:hidden;table-layout:fixed}
+.rtable td .namecell,.rtable td>div,.rtable td strong{min-width:0}
+.rtable td.nm-cell{overflow:hidden}
+.rtable .namecell{max-width:100%}
+.rtable .namecell>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rtable th,.rtable td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
 .rtable tbody tr:last-child td{border-bottom:none}
 .rtable th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .rtable td.r{text-align:right}.rtable td.c{text-align:center}
+.rtable th.r{text-align:right}.rtable th.c{text-align:center}
 .rtable tbody tr:hover{background:color-mix(in srgb,var(--pink) 4%,transparent)}
 .rankhex{width:27px;height:30px;display:inline-grid;place-items:center;font-family:"Space Grotesk";font-weight:700;font-size:13px;color:var(--muted);
   background:var(--bg-2);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
@@ -265,11 +287,12 @@ section[id^="view-"]{animation:rise .4s both}
           <button class="btn grad" id="addBtn">追加</button>
         </div>
       </div>
-      <div class="hint" style="margin-bottom:10px">チップをタップ → 席をタップで配置（PCはドラッグも可）。配置済みは半透明。</div>
+      <div class="hint" style="margin-bottom:10px">個人戦は各POPの<b>チェック</b>でその試合の参加者を切替（既定=全員参加）。チップをタップ → 席をタップで配置（PCはドラッグも可）。</div>
       <div class="pool" id="pool"></div>
     </div>
 
     <div class="matchsel" id="matchSel"></div>
+    <div id="assignBar"></div>
     <div class="tables" id="tables"></div>
   </section>
 
@@ -303,6 +326,8 @@ section[id^="view-"]{animation:rise .4s both}
   const $=s=>document.querySelector(s);
   const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;};
   function avImg(url,cls){if(!url)return null;const im=el("img","av"+(cls?" "+cls:""));im.src=url;im.alt="";im.loading="lazy";im.onerror=()=>im.remove();return im;}
+  // 結果テーブルの列幅を固定（順位/選手/[試合数]/pt を全表で揃える）
+  function colg(tbl,widths){const cg=document.createElement("colgroup");widths.forEach(w=>{const c=document.createElement("col");if(w)c.style.width=w;cg.appendChild(c);});tbl.insertBefore(cg,tbl.firstChild);}
   // 名前＋アバターのセル（テーブル用）
   function nameWithAv(s,pid,name){const sp=el("span","namecell");const a=avImg(C.avatarOf(s,pid),"sm");if(a)sp.appendChild(a);sp.appendChild(el("span","",name!=null?name:C.nameOf(s,pid)));return sp;}
   function toast(m){const t=$("#toast");t.textContent=m;t.classList.remove("hidden");clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.add("hidden"),2600);}
@@ -376,23 +401,39 @@ section[id^="view-"]{animation:rise .4s both}
     document.querySelectorAll(".mode").forEach(m=>m.classList.toggle("on",m.dataset.mode===s.mode));
     $("#modeHint").textContent=modeHint(s.mode);
     if(curMatch>=s.matchCount)curMatch=s.matchCount-1;
-    if(curTab==="setup"){renderPool(s);renderMatchSel(s);renderTables(s);}
+    if(curTab==="setup"){
+      renderPool(s);
+      if(s.mode==="team"){$("#matchSel").innerHTML="";$("#assignBar").innerHTML="";renderTeamSetup(s);}
+      else if(s.mode==="doubleup"){$("#matchSel").innerHTML="";$("#assignBar").innerHTML="";renderPairSetup(s);}
+      else{renderMatchSel(s);renderAssignBar(s);renderTables(s);}
+    }
     else renderResults(s);
   }
   function modeHint(mode){
     if(mode==="solo")return "個人戦：1位8pt 〜 8位1pt";
-    if(mode==="team")return "チーム戦：4人×2チーム／各員の獲得pt合計が多いチームの勝ち";
-    return "ダブルアップ：4ペア／1位8・2位6・3位4・4位2pt（両者に付与）";
+    if(mode==="team")return "チーム戦：4人×N チーム（卓数×2）／チーム内メンバーの合計ptで順位";
+    return "ダブルアップ：2人×N ペア（卓数×4）／1位8・2位6・3位4・4位2pt（両者に付与）";
   }
 
   function renderPool(s){
     const pool=$("#pool");pool.innerHTML="";
     if(!s.roster.length){pool.appendChild(el("div","pool-empty","名前を追加するとここにPOPが出ます"));return;}
     const placed=new Set();
-    s.matches[curMatch]?.tables.forEach(tb=>tb.seats.forEach(id=>id&&placed.add(id)));
+    if(s.mode==="team")(s.teams||[]).forEach(tm=>tm.members.forEach(id=>id&&placed.add(id)));
+    else if(s.mode==="doubleup")(s.pairs||[]).forEach(pr=>pr.members.forEach(id=>id&&placed.add(id)));
+    else s.matches[curMatch]?.tables.forEach(tb=>tb.seats.forEach(id=>id&&placed.add(id)));
     s.roster.forEach(p=>{
-      const c=el("div","chip"+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":""));
+      const isSolo=s.mode==="solo";
+      const present=isSolo?C.isPresent(s,curMatch,p.id):true;
+      const c=el("div","chip"+(isSolo?" has-check":"")+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":"")+(isSolo&&!present?" absent":""));
       c.draggable=true;c.dataset.pid=p.id;
+      if(isSolo){
+        const chk=el("input","chip-check");chk.type="checkbox";chk.checked=present;
+        chk.title="この試合に参加";
+        chk.onclick=ev=>ev.stopPropagation();
+        chk.onchange=ev=>{ev.stopPropagation();store.setPresent(curMatch,p.id,chk.checked);};
+        c.appendChild(chk);
+      }
       if(p.discordAvatar){const im=avImg(p.discordAvatar,"");if(im){im.className="chip-av";c.classList.add("has-av");c.appendChild(im);}}
       c.appendChild(el("span","nm",p.name));
       const x=el("span","x","×");
@@ -413,6 +454,45 @@ section[id^="view-"]{animation:rise .4s both}
     }
   }
 
+  /* ---- 参加者カウント＋自動組卓（solo専用）---- */
+  function renderAssignBar(s){
+    const bar=$("#assignBar");bar.innerHTML="";
+    if(s.mode!=="solo")return;
+    const panel=el("div","panel assignbar");
+    const cnt=C.presentList(s,curMatch).length, cap=s.tableCount*8;
+    const info=el("div","assign-info");
+    info.innerHTML=`<span class="assign-h">第${curMatch+1}試合の参加者</span><b class="num">${cnt}</b>名 ／ 卓数${s.tableCount}（最大${cap}名）`;
+    panel.appendChild(info);
+
+    const acts=el("div","assign-acts");
+    const allOn=el("button","btn sm","全員 参加");
+    allOn.onclick=()=>store.setAllPresent(curMatch,true);
+    const allOff=el("button","btn sm","全員 外す");
+    allOff.onclick=()=>{if(confirm(`第${curMatch+1}試合の参加者を全員外しますか？（この試合の配置もクリアされます）`))store.setAllPresent(curMatch,false);};
+    const rnd=el("button","btn grad sm","① ランダム組卓");
+    rnd.onclick=()=>doAutoAssign("random");
+    const pts=el("button","btn sm","② pt近い順で組卓");
+    if(curMatch===0){pts.disabled=true;pts.title="2試合目以降で使えます（前試合までの累計ptを使用）";}
+    else{pts.title="直前までの累計ptが近い人を同卓に";pts.onclick=()=>doAutoAssign("points");}
+    const clr=el("button","btn sm","配置クリア");
+    clr.onclick=()=>{if(confirm(`第${curMatch+1}試合の配置をクリアしますか？`))store.clearMatchSeats(curMatch);};
+
+    acts.append(allOn,allOff,rnd,pts,clr);
+    panel.appendChild(acts);
+    bar.appendChild(panel);
+  }
+
+  function doAutoAssign(method){
+    const s=store.state;
+    if(C.presentList(s,curMatch).length===0){toast("参加者が0名です（POPのチェックをオンに）");return;}
+    const filled=s.matches[curMatch].tables.some(tb=>tb.seats.some(Boolean));
+    if(filled&&!confirm(`第${curMatch+1}試合は既に配置があります。組み直しますか？`))return;
+    const r=store.autoAssign(curMatch,method);
+    if(!r){toast("自動組卓は個人戦のみ対応です");return;}
+    if(r.dropped>0)toast(`${r.assigned}名を配置（満員のため${r.dropped}名は未配置・卓数を増やしてください）`);
+    else toast(`${r.assigned}名を${method==="points"?"pt近い順":"ランダム"}で配置しました`);
+  }
+
   function renderTables(s){
     const wrap=$("#tables");wrap.innerHTML="";
     for(let t=0;t<s.tableCount;t++){
@@ -423,9 +503,93 @@ section[id^="view-"]{animation:rise .4s both}
       h.appendChild(el("h3","","卓 "+(t+1)));
       h.appendChild(el("span","cnt",tb.seats.filter(Boolean).length+"/8"));
       card.appendChild(h);
-      if(s.mode==="solo")card.appendChild(seatGroup(s,t,null,0,8));
-      else if(s.mode==="team"){card.appendChild(seatGroup(s,t,C.teamName(s,0),0,4));card.appendChild(seatGroup(s,t,C.teamName(s,1),4,8,"t2"));}
-      else for(let g=0;g<4;g++)card.appendChild(seatGroup(s,t,C.pairName(s,g),g*2,g*2+2));
+      card.appendChild(seatGroup(s,t,null,0,8));
+      wrap.appendChild(card);
+    }
+  }
+
+  /* ---- チーム戦：チーム設定（名前＋メンバー4人、卓数×2チーム、全試合で固定）---- */
+  function renderTeamSetup(s){
+    const wrap=$("#tables");wrap.innerHTML="";
+    const teamCount=s.tableCount*2;
+    for(let i=0;i<teamCount;i++){
+      const tableIdx=Math.floor(i/2);
+      const card=el("div","table");
+      const h=el("div","table-h");
+      h.appendChild(el("span","thx",String(i+1)));
+      const nameInp=el("input");nameInp.value=C.teamName(s,i);
+      nameInp.style.cssText="font:inherit;font-weight:800;font-size:15px;border:none;background:transparent;flex:1;min-width:0;padding:0;color:inherit";
+      nameInp.onchange=()=>store.setTeamName(i,nameInp.value);
+      h.appendChild(nameInp);
+      h.appendChild(el("span","cnt","卓"+(tableIdx+1)));
+      card.appendChild(h);
+      const g=el("div","grp");
+      const seats=el("div","seats");
+      const team=(s.teams&&s.teams[i])||{members:[]};
+      for(let k=0;k<4;k++){
+        const pid=team.members[k];
+        const seat=el("div","seat "+(pid?"filled":"empty"));
+        seat.dataset.seat=k;
+        seat.appendChild(el("span","sn",String(k+1)));
+        if(pid){const a=avImg(C.avatarOf(s,pid),"sm");if(a)seat.appendChild(a);}
+        seat.appendChild(el("span","nm",pid?C.nameOf(s,pid):"空き"));
+        if(pid){const rm=el("span","rm","×");rm.onclick=e=>{e.stopPropagation();store.setTeamMember(i,k,null);};seat.appendChild(rm);}
+        seat.onclick=()=>{
+          if(selectedChip){store.setTeamMember(i,k,selectedChip);selectedChip=null;}
+          else if(pid){selectedChip=pid;renderPool(s);}
+        };
+        seat.addEventListener("dragover",e=>{e.preventDefault();seat.classList.add("over");});
+        seat.addEventListener("dragleave",()=>seat.classList.remove("over"));
+        seat.addEventListener("drop",e=>{e.preventDefault();seat.classList.remove("over");
+          let d;try{d=JSON.parse(e.dataTransfer.getData("text/plain"));}catch(_){return;}
+          if(d&&d.pid)store.setTeamMember(i,k,d.pid);});
+        if(pid){seat.draggable=true;seat.addEventListener("dragstart",e=>e.dataTransfer.setData("text/plain",JSON.stringify({pid,from:"team"})));}
+        seats.appendChild(seat);
+      }
+      g.appendChild(seats);card.appendChild(g);
+      wrap.appendChild(card);
+    }
+  }
+
+  /* ---- ダブルアップ：ペア設定（名前＋メンバー2人、卓数×4ペア、全試合で固定）---- */
+  function renderPairSetup(s){
+    const wrap=$("#tables");wrap.innerHTML="";
+    const pairCount=s.tableCount*4;
+    for(let i=0;i<pairCount;i++){
+      const tableIdx=Math.floor(i/4);
+      const card=el("div","table");
+      const h=el("div","table-h");
+      h.appendChild(el("span","thx",String(i+1)));
+      const nameInp=el("input");nameInp.value=C.pairName(s,i);
+      nameInp.style.cssText="font:inherit;font-weight:800;font-size:15px;border:none;background:transparent;flex:1;min-width:0;padding:0;color:inherit";
+      nameInp.onchange=()=>store.setPairName(i,nameInp.value);
+      h.appendChild(nameInp);
+      h.appendChild(el("span","cnt","卓"+(tableIdx+1)));
+      card.appendChild(h);
+      const g=el("div","grp");
+      const seats=el("div","seats");
+      const pair=(s.pairs&&s.pairs[i])||{members:[]};
+      for(let k=0;k<2;k++){
+        const pid=pair.members[k];
+        const seat=el("div","seat "+(pid?"filled":"empty"));
+        seat.dataset.seat=k;
+        seat.appendChild(el("span","sn",String(k+1)));
+        if(pid){const a=avImg(C.avatarOf(s,pid),"sm");if(a)seat.appendChild(a);}
+        seat.appendChild(el("span","nm",pid?C.nameOf(s,pid):"空き"));
+        if(pid){const rm=el("span","rm","×");rm.onclick=e=>{e.stopPropagation();store.setPairMember(i,k,null);};seat.appendChild(rm);}
+        seat.onclick=()=>{
+          if(selectedChip){store.setPairMember(i,k,selectedChip);selectedChip=null;}
+          else if(pid){selectedChip=pid;renderPool(s);}
+        };
+        seat.addEventListener("dragover",e=>{e.preventDefault();seat.classList.add("over");});
+        seat.addEventListener("dragleave",()=>seat.classList.remove("over"));
+        seat.addEventListener("drop",e=>{e.preventDefault();seat.classList.remove("over");
+          let d;try{d=JSON.parse(e.dataTransfer.getData("text/plain"));}catch(_){return;}
+          if(d&&d.pid)store.setPairMember(i,k,d.pid);});
+        if(pid){seat.draggable=true;seat.addEventListener("dragstart",e=>e.dataTransfer.setData("text/plain",JSON.stringify({pid,from:"pair"})));}
+        seats.appendChild(seat);
+      }
+      g.appendChild(seats);card.appendChild(g);
       wrap.appendChild(card);
     }
   }
@@ -478,12 +642,13 @@ section[id^="view-"]{animation:rise .4s both}
     const rows=C.overallStandings(s);
     if(!rows.length){card.appendChild(el("div","muted","まだ結果がありません"));return card;}
     const tbl=el("table","rtable");
-    tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th>試合数</th><th>合計pt</th></tr></thead>";
+    tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th class='c'>試合数</th><th class='r'>合計pt</th></tr></thead>";
+    colg(tbl,["64px",null,"76px","96px"]);
     const tb=el("tbody");
     rows.forEach((r,i)=>{
       const tr=el("tr");
       const rc=el("td","c");rc.appendChild(rankHex(i+1));tr.appendChild(rc);
-      const nc=el("td");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
+      const nc=el("td","nm-cell");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
       tr.appendChild(el("td","c num",String(r.games)));
       tr.appendChild(el("td","r num pts",String(r.points)));
       tb.appendChild(tr);
@@ -517,12 +682,13 @@ section[id^="view-"]{animation:rise .4s both}
     const pairs=C.pairOverall(s);
     if(!pairs.length){card.appendChild(el("div","muted","まだ結果がありません"));return card;}
     const tbl=el("table","rtable");
-    tbl.innerHTML="<thead><tr><th>順位</th><th>ペア</th><th>試合数</th><th>合計pt</th></tr></thead>";
+    tbl.innerHTML="<thead><tr><th>順位</th><th>ペア</th><th class='c'>試合数</th><th class='r'>合計pt</th></tr></thead>";
+    colg(tbl,["64px",null,"76px","96px"]);
     const tb=el("tbody");
     pairs.forEach((p,i)=>{
       const tr=el("tr");
       const rc=el("td","c");rc.appendChild(rankHex(i+1));tr.appendChild(rc);
-      const nc=el("td");
+      const nc=el("td","nm-cell");
       const wrap=el("div");wrap.style.cssText="display:flex;flex-direction:column;gap:2px";
       wrap.appendChild(el("strong","",p.name));
       const ml=el("span","memberline");
@@ -555,12 +721,13 @@ section[id^="view-"]{animation:rise .4s both}
   function soloTable(s,mi,ti,st){
     if(!st.rows.length)return el("div","muted","この卓に選手がいません");
     const tbl=el("table","rtable");
-    tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th>pt</th></tr></thead>";
+    tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th class='r'>pt</th></tr></thead>";
+    colg(tbl,["64px",null,"96px"]);
     const tb=el("tbody");
     st.rows.forEach(r=>{
       const tr=el("tr");
       const rc=el("td","c");rc.appendChild(rankInput(mi,ti,r.pid,r.rank,8));tr.appendChild(rc);
-      const nc=el("td");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
+      const nc=el("td","nm-cell");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
       tr.appendChild(el("td","r num pts",String(r.points)));
       tb.appendChild(tr);
     });
@@ -577,12 +744,13 @@ section[id^="view-"]{animation:rise .4s both}
       if(win)right.appendChild(el("span","winner","WIN"));
       head.appendChild(right);block.appendChild(head);
       const tbl=el("table","rtable");
-      tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th>pt</th></tr></thead>";
+      tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th class='r'>pt</th></tr></thead>";
+      colg(tbl,["64px",null,"96px"]);
       const tb=el("tbody");
       tm.members.forEach(r=>{
         const tr=el("tr");
         const rc=el("td","c");rc.appendChild(rankInput(mi,ti,r.pid,r.rank,8));tr.appendChild(rc);
-        const nc=el("td");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
+        const nc=el("td","nm-cell");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
         tr.appendChild(el("td","r num pts",String(r.points)));
         tb.appendChild(tr);
       });
@@ -594,7 +762,8 @@ section[id^="view-"]{animation:rise .4s both}
   function doubleTable(s,mi,ti,st){
     if(!st.pairs.length)return el("div","muted","この卓にペアがいません");
     const tbl=el("table","rtable");
-    tbl.innerHTML="<thead><tr><th>順位</th><th>ペア</th><th>pt</th></tr></thead>";
+    tbl.innerHTML="<thead><tr><th>順位</th><th>ペア</th><th class='r'>pt</th></tr></thead>";
+    colg(tbl,["64px",null,"96px"]);
     const tb=el("tbody");
     st.pairs.forEach(p=>{
       const tr=el("tr");
@@ -602,7 +771,7 @@ section[id^="view-"]{animation:rise .4s both}
       const inp=el("input","rinput num");inp.type="number";inp.min=1;inp.max=4;inp.value=p.rank||"";inp.placeholder="–";
       inp.onchange=()=>p.members.forEach(m=>store.setPlacement(mi,ti,m.pid,inp.value));
       rc.appendChild(inp);tr.appendChild(rc);
-      const nc=el("td");
+      const nc=el("td","nm-cell");
       const wrap=el("div");wrap.style.cssText="display:flex;flex-direction:column;gap:2px";
       wrap.appendChild(el("strong","",p.name));
       const ml=el("span","memberline");

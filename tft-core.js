@@ -34,10 +34,73 @@
     for (let m = 0; m < matchCount; m++) {
       const tables = [];
       for (let t = 0; t < tableCount; t++) tables.push(emptyTable());
-      matches.push({ tables });
+      // present: その試合の参加者pid配列。null = 全員参加（後方互換）
+      matches.push({ tables, present: null });
     }
     return matches;
   }
+
+  /* ---------- チーム戦：チーム生成（4人×N、N=卓数×2）----------
+     既存のチーム（existing）があれば名前・メンバーを可能な限り温存する。 */
+  function buildTeams(tableCount, existing) {
+    const n = Math.max(0, tableCount | 0) * 2;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const prev = existing && existing[i];
+      const members = (prev && Array.isArray(prev.members)) ? prev.members.slice(0, 4) : [];
+      while (members.length < 4) members.push(null);
+      out.push({ name: (prev && prev.name) || ("チーム" + (i + 1)), members });
+    }
+    return out;
+  }
+
+  /* ---------- チーム戦：チーム編成を各試合の卓座席へ反映 ----------
+     チームi → 卓 floor(i/2) の 席[(i%2)*4 .. +4)。全試合で固定。 */
+  function syncTeamSeats(state) {
+    if (state.mode !== "team") return;
+    const teams = state.teams || [];
+    state.matches.forEach(mt => {
+      mt.tables.forEach((tb, tableIdx) => {
+        for (let side = 0; side < 2; side++) {
+          const team = teams[tableIdx * 2 + side] || { members: [] };
+          for (let k = 0; k < 4; k++) {
+            tb.seats[side * 4 + k] = team.members[k] || null;
+          }
+        }
+      });
+    });
+  }
+
+  /* ---------- ダブルアップ：ペア生成（2人×N、N=卓数×4）----------
+     既存のペア（existing）があれば名前・メンバーを可能な限り温存する。 */
+  function buildPairs(tableCount, existing) {
+    const n = Math.max(0, tableCount | 0) * 4;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const prev = existing && existing[i];
+      const members = (prev && Array.isArray(prev.members)) ? prev.members.slice(0, 2) : [];
+      while (members.length < 2) members.push(null);
+      out.push({ name: (prev && prev.name) || ("ペア" + (i + 1)), members });
+    }
+    return out;
+  }
+
+  /* ---------- ダブルアップ：ペア編成を各試合の卓座席へ反映 ----------
+     ペアi → 卓 floor(i/4) の 席[(i%4)*2 .. +2)。全試合で固定。 */
+  function syncPairSeats(state) {
+    if (state.mode !== "doubleup") return;
+    const pairs = state.pairs || [];
+    state.matches.forEach(mt => {
+      mt.tables.forEach((tb, tableIdx) => {
+        for (let g = 0; g < 4; g++) {
+          const pair = pairs[tableIdx * 4 + g] || { members: [] };
+          tb.seats[g * 2] = pair.members[0] || null;
+          tb.seats[g * 2 + 1] = pair.members[1] || null;
+        }
+      });
+    });
+  }
+
   function blankState() {
     const d = CFG.defaults || {};
     const mc = d.matchCount || 3, tc = d.tableCount || 2, mode = d.mode || "solo";
@@ -46,8 +109,8 @@
       matchCount: mc,
       tableCount: tc,
       roster: [],                       // [{id,name,riotId,discordId,discordAvatar}]
-      teamNames: ["チーム1", "チーム2"],          // 4v4の2チーム名
-      pairNames: ["ペア1", "ペア2", "ペア3", "ペア4"], // ダブルアップの4ペア名
+      teams: buildTeams(tc),            // 4v4のチーム（4人×卓数×2）[{name,members:[pid,pid,pid,pid]}]
+      pairs: buildPairs(tc),            // ダブルアップのペア（2人×卓数×4）[{name,members:[pid,pid]}]
       matches: buildMatches(mc, tc),
       updatedAt: Date.now()
     };
@@ -61,10 +124,16 @@
         const old = state.matches[m] && state.matches[m].tables[t];
         if (old) next[m].tables[t] = old;
       }
+      // 参加者リストも温存
+      if (state.matches[m]) next[m].present = state.matches[m].present || null;
     }
     state.matches = next;
     state.matchCount = matchCount;
     state.tableCount = tableCount;
+    state.teams = buildTeams(tableCount, state.teams);
+    syncTeamSeats(state);
+    state.pairs = buildPairs(tableCount, state.pairs);
+    syncPairSeats(state);
   }
 
   /* =============================================================
@@ -145,8 +214,8 @@
       s.matchCount = Math.max(1, s.matchCount | 0 || 1);
       s.tableCount = Math.max(1, s.tableCount | 0 || 1);
       if (!Array.isArray(s.roster)) s.roster = [];
-      if (!Array.isArray(s.teamNames) || s.teamNames.length < 2) s.teamNames = ["チーム1", "チーム2"];
-      if (!Array.isArray(s.pairNames) || s.pairNames.length < 4) s.pairNames = ["ペア1", "ペア2", "ペア3", "ペア4"];
+      s.teams = buildTeams(s.tableCount, s.teams);
+      s.pairs = buildPairs(s.tableCount, s.pairs);
       if (!Array.isArray(s.matches)) s.matches = buildMatches(s.matchCount, s.tableCount);
       // 卓数/試合数とmatchesの整合
       for (let m = 0; m < s.matchCount; m++) {
@@ -162,7 +231,14 @@
             if (!tb.placements || typeof tb.placements !== "object") tb.placements = {};
           }
         }
+        // 参加者リスト：配列なら現存rosterに絞る、それ以外は null（=全員参加）
+        const pr = s.matches[m].present;
+        s.matches[m].present = Array.isArray(pr)
+          ? pr.filter(id => s.roster.some(p => p.id === id))
+          : null;
       }
+      syncTeamSeats(s);
+      syncPairSeats(s);
       return s;
     }
 
@@ -195,6 +271,8 @@
           tb.seats = new Array(SEATS_PER_TABLE).fill(null);
           tb.placements = {};
         }));
+        // モードが変わると参加者の意味も変わるためリセット（=全員参加）
+        state.matches.forEach(mt => { mt.present = null; });
       }
       const mc = matchCount != null ? Math.max(1, matchCount | 0) : state.matchCount;
       const tc = tableCount != null ? Math.max(1, tableCount | 0) : state.tableCount;
@@ -214,6 +292,8 @@
       }
       const p = { id: genId(), name, riotId: (riotId || "").trim(), discordId: (discordId || "").trim() };
       state.roster.push(p);
+      // 既に参加者を明示している試合には、新規選手も「参加」で追加（null=全員参加はそのまま）
+      state.matches.forEach(mt => { if (Array.isArray(mt.present)) mt.present.push(p.id); });
       save();
       return p;
     }
@@ -226,10 +306,20 @@
     function removePlayer(id) {
       state.roster = state.roster.filter(p => p.id !== id);
       // 座席と順位からも除去
-      state.matches.forEach(mt => mt.tables.forEach(tb => {
-        tb.seats = tb.seats.map(s => (s === id ? null : s));
-        delete tb.placements[id];
-      }));
+      state.matches.forEach(mt => {
+        mt.tables.forEach(tb => {
+          tb.seats = tb.seats.map(s => (s === id ? null : s));
+          delete tb.placements[id];
+        });
+        if (Array.isArray(mt.present)) mt.present = mt.present.filter(x => x !== id);
+      });
+      // チーム/ペアメンバーからも除去
+      if (Array.isArray(state.teams)) {
+        state.teams.forEach(t => { t.members = t.members.map(m => (m === id ? null : m)); });
+      }
+      if (Array.isArray(state.pairs)) {
+        state.pairs.forEach(p => { p.members = p.members.map(m => (m === id ? null : m)); });
+      }
       save();
     }
 
@@ -239,6 +329,11 @@
       const cur = tb.seats.indexOf(playerId);
       if (cur >= 0) tb.seats[cur] = null;
       tb.seats[seatIdx] = playerId;
+      // 手動配置したら「参加」扱いに（参加者を明示している試合のみ）
+      const mt = state.matches[matchIdx];
+      if (playerId && state.mode === "solo" && Array.isArray(mt.present) && !mt.present.includes(playerId)) {
+        mt.present.push(playerId);
+      }
       save();
     }
     function clearSeat(matchIdx, tableIdx, seatIdx) {
@@ -268,14 +363,133 @@
     function resetBoard() { state = blankState(); save(); }
     function importState(obj) { state = normalize(obj); save(); }
     function setTeamName(idx, name) {
-      if (!Array.isArray(state.teamNames)) state.teamNames = ["チーム1", "チーム2"];
-      state.teamNames[idx] = (name || "").trim() || ("チーム" + (idx + 1));
+      state.teams = buildTeams(state.tableCount, state.teams);
+      if (!state.teams[idx]) return;
+      state.teams[idx].name = (name || "").trim() || ("チーム" + (idx + 1));
+      save();
+    }
+    // チーム枠(teamIdx)の メンバー席(slot 0-3)に選手(playerId)を配置。他チームに重複していれば外す。
+    function setTeamMember(teamIdx, slot, playerId) {
+      state.teams = buildTeams(state.tableCount, state.teams);
+      if (playerId) {
+        state.teams.forEach(t => {
+          const i = t.members.indexOf(playerId);
+          if (i >= 0) t.members[i] = null;
+        });
+      }
+      if (state.teams[teamIdx]) state.teams[teamIdx].members[slot] = playerId || null;
+      syncTeamSeats(state);
       save();
     }
     function setPairName(idx, name) {
-      if (!Array.isArray(state.pairNames)) state.pairNames = ["ペア1", "ペア2", "ペア3", "ペア4"];
-      state.pairNames[idx] = (name || "").trim() || ("ペア" + (idx + 1));
+      state.pairs = buildPairs(state.tableCount, state.pairs);
+      if (!state.pairs[idx]) return;
+      state.pairs[idx].name = (name || "").trim() || ("ペア" + (idx + 1));
       save();
+    }
+    // ペア枠(pairIdx)の メンバー席(slot 0-1)に選手(playerId)を配置。他ペアに重複していれば外す。
+    function setPairMember(pairIdx, slot, playerId) {
+      state.pairs = buildPairs(state.tableCount, state.pairs);
+      if (playerId) {
+        state.pairs.forEach(p => {
+          const i = p.members.indexOf(playerId);
+          if (i >= 0) p.members[i] = null;
+        });
+      }
+      if (state.pairs[pairIdx]) state.pairs[pairIdx].members[slot] = playerId || null;
+      syncPairSeats(state);
+      save();
+    }
+
+    /* ---- 参加者（出席）管理：solo用。match.present(配列)で「その試合の参加者」を保持 ----
+       null = 全員参加（後方互換）。配列にすると明示管理。 */
+    function materializePresent(matchIdx) {
+      const mt = state.matches[matchIdx];
+      if (!mt) return [];
+      if (!Array.isArray(mt.present)) mt.present = state.roster.map(p => p.id);
+      return mt.present;
+    }
+    function setPresent(matchIdx, pid, on) {
+      const mt = state.matches[matchIdx];
+      if (!mt) return;
+      const arr = materializePresent(matchIdx);
+      const i = arr.indexOf(pid);
+      if (on) { if (i < 0) arr.push(pid); }
+      else {
+        if (i >= 0) arr.splice(i, 1);
+        // 不参加にした選手はこの試合の席・順位からも外す
+        mt.tables.forEach(tb => {
+          const si = tb.seats.indexOf(pid);
+          if (si >= 0) tb.seats[si] = null;
+          delete tb.placements[pid];
+        });
+      }
+      save();
+    }
+    function setAllPresent(matchIdx, on) {
+      const mt = state.matches[matchIdx];
+      if (!mt) return;
+      if (on) mt.present = state.roster.map(p => p.id);
+      else {
+        mt.present = [];
+        mt.tables.forEach(tb => { tb.seats = new Array(SEATS_PER_TABLE).fill(null); tb.placements = {}; });
+      }
+      save();
+    }
+
+    /* ---- 自動組卓（solo専用）----
+       method "random"  : 参加者をシャッフルして卓に均等配分
+       method "points"  : 直前までの累計ptが近い人を同卓に（高pt帯から卓1へ。同pt帯はランダム）
+       戻り値: { assigned, dropped, capacity } */
+    function autoAssign(matchIdx, method) {
+      if (state.mode !== "solo") return null;
+      const mt = state.matches[matchIdx];
+      if (!mt) return null;
+      const tableCount = state.tableCount;
+      const cap = tableCount * SEATS_PER_TABLE;
+      let ids = presentList(state, matchIdx).slice();
+      let dropped = 0;
+
+      if (method === "points") {
+        const pts = {};
+        ids.forEach(id => { pts[id] = 0; });
+        for (let m = 0; m < matchIdx; m++) {
+          const pm = state.matches[m];
+          if (!pm) continue;
+          pm.tables.forEach(tb => tb.seats.forEach(pid => {
+            if (pid && pts[pid] != null) {
+              const r = tb.placements[pid];
+              if (r) pts[pid] += pointsFor(state.mode, r);
+            }
+          }));
+        }
+        // pt降順、同ptはランダムで前後
+        ids.sort((a, b) => (pts[b] - pts[a]) || (Math.random() - 0.5));
+      } else {
+        // Fisher-Yatesシャッフル
+        for (let i = ids.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [ids[i], ids[j]] = [ids[j], ids[i]];
+        }
+      }
+
+      if (ids.length > cap) { dropped = ids.length - cap; ids = ids.slice(0, cap); }
+
+      // この試合をクリアしてから配分
+      mt.tables.forEach(tb => { tb.seats = new Array(SEATS_PER_TABLE).fill(null); tb.placements = {}; });
+
+      // 卓ごとの人数を均等化（端数は前の卓から）
+      const counts = new Array(tableCount).fill(0);
+      const base = Math.floor(ids.length / tableCount), rem = ids.length % tableCount;
+      for (let t = 0; t < tableCount; t++) counts[t] = base + (t < rem ? 1 : 0);
+
+      let idx = 0;
+      for (let t = 0; t < tableCount; t++) {
+        const tb = mt.tables[t];
+        for (let sidx = 0; sidx < counts[t] && idx < ids.length; sidx++) tb.seats[sidx] = ids[idx++];
+      }
+      save();
+      return { assigned: ids.length, dropped, capacity: cap };
     }
 
     return {
@@ -286,7 +500,8 @@
       setSettings, addPlayer, updatePlayer, removePlayer,
       assignSeat, clearSeat, setPlacement,
       clearMatchSeats, clearAllResults, resetBoard, importState,
-      setTeamName, setPairName,
+      setTeamName, setTeamMember, setPairName, setPairMember,
+      setPresent, setAllPresent, autoAssign,
       _persistNow: persist
     };
   }
@@ -297,8 +512,22 @@
   function playerById(state, id) { return state.roster.find(p => p.id === id) || null; }
   function nameOf(state, id) { const p = playerById(state, id); return p ? p.name : "—"; }
   function avatarOf(state, id) { const p = playerById(state, id); return p && p.discordAvatar ? p.discordAvatar : ""; }
-  function teamName(state, idx) { return (state.teamNames && state.teamNames[idx]) || ("チーム" + (idx + 1)); }
-  function pairName(state, idx) { return (state.pairNames && state.pairNames[idx]) || ("ペア" + (idx + 1)); }
+  function teamName(state, idx) { return (state.teams && state.teams[idx] && state.teams[idx].name) || ("チーム" + (idx + 1)); }
+  function pairName(state, idx) { return (state.pairs && state.pairs[idx] && state.pairs[idx].name) || ("ペア" + (idx + 1)); }
+
+  // その試合にpidが参加しているか（present配列が無ければ全員参加扱い）
+  function isPresent(state, matchIdx, pid) {
+    const mt = state.matches[matchIdx];
+    if (!mt) return true;
+    return !Array.isArray(mt.present) ? true : mt.present.includes(pid);
+  }
+  // その試合の参加者pid一覧（roster順を維持）
+  function presentList(state, matchIdx) {
+    const mt = state.matches[matchIdx];
+    if (!mt) return [];
+    const set = new Set(!Array.isArray(mt.present) ? state.roster.map(p => p.id) : mt.present);
+    return state.roster.filter(p => set.has(p.id)).map(p => p.id);
+  }
 
   // 卓ごとの順位表
   function tableStandings(state, matchIdx, tableIdx) {
@@ -326,9 +555,9 @@
           teams[tIdx].push({ pid, name: nameOf(state, pid), rank, points: pointsFor(mode, rank) });
         }
       });
-      const teamData = teams.map((members, i) => ({
-        team: i + 1,
-        name: teamName(state, i),
+      const teamData = teams.map((members, side) => ({
+        team: tableIdx * 2 + side + 1,
+        name: teamName(state, tableIdx * 2 + side),
         members: members.sort((a, b) => (a.rank || 99) - (b.rank || 99)),
         total: members.reduce((s, x) => s + x.points, 0)
       }));
@@ -344,8 +573,8 @@
       // ペアの順位は両者同じ想定（どちらかに入っていれば採用）
       const rank = tb.placements[a] || tb.placements[b] || null;
       pairs.push({
-        pair: g + 1,
-        name: pairName(state, g),
+        pair: tableIdx * 4 + g + 1,
+        name: pairName(state, tableIdx * 4 + g),
         members: [a, b].filter(Boolean).map(pid => ({ pid, name: nameOf(state, pid) })),
         rank, points: pointsFor(mode, rank)
       });
@@ -376,40 +605,48 @@
     return list;
   }
 
-  // 4v4：2チームの通算（左4席=チーム1 / 右4席=チーム2、全試合・全卓を合算）
+  // チーム戦：全チーム（卓数×2）の通算pt。チームi → 卓floor(i/2)に固定、全試合・通算で合計。
   function teamOverall(state) {
-    const tot = [0, 1].map(i => ({ team: i + 1, name: teamName(state, i), points: 0, games: 0, members: new Set() }));
-    state.matches.forEach(mt => mt.tables.forEach(tb => {
-      tb.seats.forEach((pid, i) => {
-        if (!pid) return;
-        const side = i < 4 ? 0 : 1;
-        tot[side].members.add(pid);
-        const rank = tb.placements[pid];
-        if (rank) { tot[side].points += pointsFor("team", rank); tot[side].games += 1; }
+    const teams = state.teams || [];
+    const tot = teams.map((team, i) => {
+      const tableIdx = Math.floor(i / 2);
+      let points = 0, games = 0;
+      state.matches.forEach(mt => {
+        const tb = mt.tables[tableIdx];
+        if (!tb) return;
+        team.members.forEach(pid => {
+          if (!pid) return;
+          const rank = tb.placements[pid];
+          if (rank) { points += pointsFor("team", rank); games += 1; }
+        });
       });
-    }));
-    return tot.map(t => ({
-      team: t.team, name: t.name, points: t.points, games: t.games,
-      members: [...t.members].map(pid => ({ pid, name: nameOf(state, pid), avatar: avatarOf(state, pid) }))
-    })).sort((a, b) => b.points - a.points);
+      return {
+        team: i + 1, name: team.name, points, games,
+        members: team.members.filter(Boolean).map(pid => ({ pid, name: nameOf(state, pid), avatar: avatarOf(state, pid) }))
+      };
+    });
+    return tot.filter(t => t.members.length || t.points).sort((a, b) => b.points - a.points);
   }
 
-  // ダブルアップ：4ペア枠の通算（席(0,1)(2,3)(4,5)(6,7)=ペア1〜4、全試合・全卓を合算）
+  // ダブルアップ：全ペア（卓数×4）の通算pt。ペアi → 卓floor(i/4)に固定、全試合・通算で合計。
   function pairOverall(state) {
-    const tot = [0, 1, 2, 3].map(g => ({ pair: g + 1, name: pairName(state, g), points: 0, games: 0, members: new Set() }));
-    state.matches.forEach(mt => mt.tables.forEach(tb => {
-      for (let g = 0; g < 4; g++) {
-        const a = tb.seats[g * 2], b = tb.seats[g * 2 + 1];
-        [a, b].forEach(pid => { if (pid) tot[g].members.add(pid); });
-        const rank = tb.placements[a] || tb.placements[b];
-        if (rank) { tot[g].points += pointsFor("doubleup", rank); tot[g].games += 1; }
-      }
-    }));
-    return tot.map(t => ({
-      pair: t.pair, name: t.name, points: t.points, games: t.games,
-      members: [...t.members].map(pid => ({ pid, name: nameOf(state, pid), avatar: avatarOf(state, pid) }))
-    })).filter(t => t.members.length || t.points)
-      .sort((a, b) => b.points - a.points);
+    const pairs = state.pairs || [];
+    const tot = pairs.map((pair, i) => {
+      const tableIdx = Math.floor(i / 4);
+      let points = 0, games = 0;
+      state.matches.forEach(mt => {
+        const tb = mt.tables[tableIdx];
+        if (!tb) return;
+        const [a, b] = pair.members;
+        const rank = (a && tb.placements[a]) || (b && tb.placements[b]) || null;
+        if (rank) { points += pointsFor("doubleup", rank); games += 1; }
+      });
+      return {
+        pair: i + 1, name: pair.name, points, games,
+        members: pair.members.filter(Boolean).map(pid => ({ pid, name: nameOf(state, pid), avatar: avatarOf(state, pid) }))
+      };
+    });
+    return tot.filter(t => t.members.length || t.points).sort((a, b) => b.points - a.points);
   }
 
   /* =============================================================
@@ -522,6 +759,7 @@
     SEATS_PER_TABLE, MODES,
     pointsFor, makeStore,
     playerById, nameOf, avatarOf, teamName, pairName,
+    isPresent, presentList,
     tableStandings, overallStandings, teamOverall, pairOverall,
     Riot, Discord
   };
