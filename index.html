@@ -235,7 +235,7 @@ section[id^="view-"]{animation:rise .4s both}
     <div class="toolbar">
       <div class="modeset" id="modes">
         <button class="mode" data-mode="solo">個人戦</button>
-        <button class="mode" data-mode="team">チーム戦 4v4</button>
+        <button class="mode" data-mode="team_custom">チーム戦</button>
         <button class="mode" data-mode="doubleup">ダブルアップ</button>
       </div>
       <span class="spacer"></span>
@@ -269,9 +269,12 @@ section[id^="view-"]{animation:rise .4s both}
           <button class="btn grad" id="addBtn">追加</button>
         </div>
       </div>
-      <div class="hint" style="margin-bottom:10px">チップをタップ → 席をタップで配置（PCはドラッグも可）。配置済みは半透明。</div>
+      <div class="hint" style="margin-bottom:10px" id="setupHint">チップをタップ → 席をタップで配置（PCはドラッグも可）。配置済みは半透明。</div>
       <div class="pool" id="pool"></div>
     </div>
+
+    <div id="customTeamArea" class="hidden"></div>
+1    <div id="customPairArea" class="hidden"></div>
 
     <div class="matchsel" id="matchSel"></div>
     <div class="tables" id="tables"></div>
@@ -302,7 +305,7 @@ section[id^="view-"]{animation:rise .4s both}
 <script src="tft-core.js"></script>
 <script>
 (function(){
-  const C=window.TFTCore, store=C.makeStore();
+  const C=window.TFTCore, store=C.makeStore(), S=C.SEATS_PER_TABLE;
   let curTab="setup", curMatch=0, curResMatch="overall", selectedChip=null;
   const $=s=>document.querySelector(s);
   const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;};
@@ -379,16 +382,25 @@ section[id^="view-"]{animation:rise .4s both}
     $("#matchCount").value=s.matchCount;$("#tableCount").value=s.tableCount;
     document.querySelectorAll(".mode").forEach(m=>m.classList.toggle("on",m.dataset.mode===s.mode));
     $("#modeHint").textContent=modeHint(s.mode);
+    $("#setupHint").textContent = s.mode === 'team_custom' ? '選手を下のチーム枠にドラッグ＆ドロップでチームを編成し、チームを卓に配置します。' : 'チップをタップ → 席をタップで配置（PCはドラッグも可）。配置済みは半透明。';
+    let hint = 'チップをタップ → 席をタップで配置（PCはドラッグも可）。配置済みは半透明。';
+    if (s.mode === 'team_custom') hint = '選手を下のチーム枠にドラッグ＆ドロップでチームを編成し、チームを卓に配置します。';
+    if (s.mode === 'doubleup') hint = '選手を下のペア枠にドラッグ＆ドロップでペアを編成し、ペアを卓に配置します。';
+    $("#setupHint").textContent = hint;
     if(curMatch>=s.matchCount)curMatch=s.matchCount-1;
     if(curTab==="setup"){renderPool(s);renderMatchSel(s);renderTables(s);}
     else renderResults(s);
+    $("#customTeamArea").classList.toggle("hidden", s.mode !== 'team_custom' || curTab !== 'setup');
+    $("#customPairArea").classList.toggle("hidden", s.mode !== 'doubleup' || curTab !== 'setup');
+    if(s.mode === 'team_custom' && curTab === 'setup') renderCustomTeams(s);
+    if(s.mode === 'doubleup' && curTab === 'setup') renderCustomPairs(s);
   }
   function modeHint(mode){
     if(mode==="solo")return "個人戦：1位8pt 〜 8位1pt";
-    if(mode==="team")return "チーム戦：4人×2チーム／各員の獲得pt合計が多いチームの勝ち";
-    return "ダブルアップ：4ペア／1位8・2位6・3位4・4位2pt（両者に付与）";
+    if(mode==="team_custom")return "チーム戦：4人チームを編成し、卓ごとに2チームが対戦。ptは個人戦と同じ。";
+    return "ダブルアップ：2人ペアを編成し、卓ごとに4ペアが対戦。ペア順位に応じてpt付与。";
   }
-
+  
   function renderPool(s){
     const pool=$("#pool");pool.innerHTML="";
     if(!s.roster.length){pool.appendChild(el("div","pool-empty","名前を追加するとここにPOPが出ます"));return;}
@@ -396,7 +408,10 @@ section[id^="view-"]{animation:rise .4s both}
     s.matches[curMatch]?.tables.forEach(tb=>tb.seats.forEach(id=>id&&placed.add(id)));
     s.roster.forEach(p=>{
       const c=el("div","chip"+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":""));
-      c.draggable=true;c.dataset.pid=p.id;
+      c.draggable=true;
+      c.dataset.pid=p.id;
+      c.dataset.type = 'player';
+
       if(p.discordAvatar){const im=avImg(p.discordAvatar,"");if(im){im.className="chip-av";c.classList.add("has-av");c.appendChild(im);}}
       c.appendChild(el("span","nm",p.name));
       const x=el("span","x","×");
@@ -404,9 +419,97 @@ section[id^="view-"]{animation:rise .4s both}
       c.appendChild(x);
       c.onclick=()=>{selectedChip=(selectedChip===p.id)?null:p.id;renderPool(s);};
       c.addEventListener("dragstart",e=>{c.classList.add("dragging");e.dataTransfer.setData("text/plain",JSON.stringify({pid:p.id,from:"pool"}));});
-      c.addEventListener("dragend",()=>c.classList.remove("dragging"));
+      c.addEventListener("dragend",()=>c.classList.remove("dragging"));      
       pool.appendChild(c);
     });
+  }
+
+  function renderCustomTeams(s) {
+    const area = $("#customTeamArea");
+    area.innerHTML = '';
+    const panel = el('div', 'panel');
+    const head = el('div', 'pool-head');
+    head.innerHTML = '<h3>チーム編成エリア</h3>';
+    panel.appendChild(head);
+
+    const teamsWrap = el('div', 'tables'); // .tables のスタイルを流用
+    const unassigned = new Set(s.roster.map(p => p.id));
+    s.matches[curMatch].tables.forEach(t => t.seats.forEach(pid => pid && unassigned.delete(pid)));
+
+    const teamCount = Math.ceil(s.roster.length / 4);
+    for (let i = 0; i < teamCount; i++) {
+        const teamBox = el('div', 'table'); // .table のスタイル
+        const teamId = `custom_team_${i}`;
+        const members = s.roster.filter(p => p.customTeamId === teamId);
+
+        const h = el('div', 'table-h');
+        const teamName = members.length > 0 ? members.map(p => C.nameOf(s, p.id)).slice(0,2).join(', ') + (members.length > 2 ? '...' : '') : '空チーム';
+        h.appendChild(el('h3', '', `チーム ${i+1}: ${teamName}`));
+        h.appendChild(el('span', 'cnt', `${members.length}/4`));
+        teamBox.appendChild(h);
+
+        const seatBox = el('div', 'seats');
+        seatBox.style.padding = '10px';
+        seatBox.dataset.teamId = teamId;
+        members.forEach(p => {
+            const chip = el('div', 'chip');
+            chip.textContent = p.name;
+            seatBox.appendChild(chip);
+        });
+        teamBox.appendChild(seatBox);
+        
+        teamBox.draggable = true;
+        teamBox.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'team', teamId, members: members.map(m => m.id) }));
+        });
+        teamsWrap.appendChild(teamBox);
+    }
+    panel.appendChild(teamsWrap);
+    area.appendChild(panel);
+  }
+
+  function renderCustomPairs(s) {
+    const area = $("#customPairArea");
+    area.innerHTML = '';
+    const panel = el('div', 'panel');
+    const head = el('div', 'pool-head');
+    head.innerHTML = '<h3>ペア編成エリア</h3>';
+    panel.appendChild(head);
+
+    const pairsWrap = el('div', 'tables'); // .tables のスタイルを流用
+    const unassigned = new Set(s.roster.map(p => p.id));
+    s.matches[curMatch].tables.forEach(t => t.seats.forEach(pid => pid && unassigned.delete(pid)));
+
+    const pairCount = Math.ceil(s.roster.length / 2);
+    for (let i = 0; i < pairCount; i++) {
+        const pairBox = el('div', 'table'); // .table のスタイル
+        const pairId = `custom_pair_${i}`;
+        const members = s.roster.filter(p => p.customPairId === pairId);
+
+        const h = el('div', 'table-h');
+        const pairName = members.length > 0 ? members.map(p => C.nameOf(s, p.id)).join(' & ') : '空ペア';
+        h.appendChild(el('h3', '', `ペア ${i+1}: ${pairName}`));
+        h.appendChild(el('span', 'cnt', `${members.length}/2`));
+        pairBox.appendChild(h);
+
+        const seatBox = el('div', 'seats');
+        seatBox.style.padding = '10px';
+        seatBox.dataset.pairId = pairId;
+        members.forEach(p => {
+            const chip = el('div', 'chip');
+            chip.textContent = p.name;
+            seatBox.appendChild(chip);
+        });
+        pairBox.appendChild(seatBox);
+        
+        pairBox.draggable = true;
+        pairBox.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'pair', pairId, members: members.map(m => m.id) }));
+        });
+        pairsWrap.appendChild(pairBox);
+    }
+    panel.appendChild(pairsWrap);
+    area.appendChild(panel);
   }
 
   function renderMatchSel(s){
@@ -425,11 +528,11 @@ section[id^="view-"]{animation:rise .4s both}
       const h=el("div","table-h");
       h.appendChild(el("span","thx",String(t+1)));
       h.appendChild(el("h3","","卓 "+(t+1)));
-      h.appendChild(el("span","cnt",tb.seats.filter(Boolean).length+"/8"));
+      h.appendChild(el("span","cnt",tb.seats.filter(Boolean).length+"/"+S));
       card.appendChild(h);
-      if(s.mode==="solo")card.appendChild(seatGroup(s,t,null,0,8));
-      else if(s.mode==="team"){card.appendChild(seatGroup(s,t,C.teamName(s,0),0,4));card.appendChild(seatGroup(s,t,C.teamName(s,1),4,8,"t2"));}
-      else for(let g=0;g<4;g++)card.appendChild(seatGroup(s,t,C.pairName(s,g),g*2,g*2+2));
+      if(s.mode==="solo")card.appendChild(seatGroup(s,t,null,0,S));
+      else if(s.mode==="team_custom"){card.appendChild(seatGroup(s,t,'チームA (左)',0,4));card.appendChild(seatGroup(s,t,'チームB (右)',4,8,"t2"));}
+      else for(let g=0;g<4;g++)card.appendChild(seatGroup(s,t,`ペア ${g+1}`,g*2,g*2+2));
       wrap.appendChild(card);
     }
   }
@@ -452,11 +555,28 @@ section[id^="view-"]{animation:rise .4s both}
       seat.addEventListener("dragover",e=>{e.preventDefault();seat.classList.add("over");});
       seat.addEventListener("dragleave",()=>seat.classList.remove("over"));
       seat.addEventListener("drop",e=>{e.preventDefault();seat.classList.remove("over");
-        let d;try{d=JSON.parse(e.dataTransfer.getData("text/plain"));}catch(_){return;}
-        if(d&&d.pid)store.assignSeat(curMatch,tableIdx,i,d.pid);});
-      if(pid){seat.draggable=true;seat.addEventListener("dragstart",e=>e.dataTransfer.setData("text/plain",JSON.stringify({pid,from:"seat"})));}
+          let d;try{d=JSON.parse(e.dataTransfer.getData("text/plain"));}catch(_){return;}
+          if (!d) return;
+          if (d.type === 'team' && d.members) {
+              if (i === 0 || i === 4) { // チームA(0)かチームB(4)のドロップゾーン
+                  d.members.slice(0, 4).forEach((memberId, k) => {
+                      store.assignSeat(curMatch, tableIdx, i + k, memberId, {type: 'team', id: d.teamId, isDrop: true});
+                  });
+              }
+          } else if (d.type === 'pair' && d.members) {
+              if (i % 2 === 0) { // 各ペアの先頭席(0,2,4,6)
+                  d.members.slice(0, 2).forEach((memberId, k) => {
+                      store.assignSeat(curMatch, tableIdx, i + k, memberId, {type: 'pair', id: d.pairId, isDrop: true});
+                  });
+              }
+          } else if (d.pid) {
+              store.assignSeat(curMatch, tableIdx, i, d.pid);
+          }
+      });
+      if(pid){seat.draggable=true;seat.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",JSON.stringify({pid,from:"seat"}));});}
       seats.appendChild(seat);
     }
+    if ((s.mode === 'team_custom' && (from === 0 || from === 4)) || (s.mode === 'doubleup')) g.classList.add('over'); // Drop zone indicator
     g.appendChild(seats);return g;
   }
 
@@ -475,8 +595,8 @@ section[id^="view-"]{animation:rise .4s both}
   }
 
   function overallView(s){
-    if(s.mode==="team")return teamOverallView(s);
-    if(s.mode==="doubleup")return pairOverallView(s);
+    if(C.MODES[s.mode]?.isTeam)return teamOverallView(s);
+    if(C.MODES[s.mode]?.isPair)return pairOverallView(s);
     // solo
     const card=el("div","card");card.appendChild(el("h3","","全体順位（個人累計pt）"));
     const rows=C.overallStandings(s);
@@ -528,15 +648,14 @@ section[id^="view-"]{animation:rise .4s both}
       const rc=el("td","c");rc.appendChild(rankHex(i+1));tr.appendChild(rc);
       const nc=el("td");
       const wrap=el("div");wrap.style.cssText="display:flex;flex-direction:column;gap:2px";
-      wrap.appendChild(el("strong","",p.name));
-      const ml=el("span","memberline");
+      const ml=el("div","memberline"); // この行は変更ありませんが、コンテキストとして表示
       p.members.forEach(m=>{const chip=el("span","memberchip");const a=avImg(m.avatar,"sm");if(a)chip.appendChild(a);chip.appendChild(el("span","",m.name));ml.appendChild(chip);});
       wrap.appendChild(ml);nc.appendChild(wrap);tr.appendChild(nc);
       tr.appendChild(el("td","c num",String(p.games)));
       tr.appendChild(el("td","r num pts",String(p.points)));
       tb.appendChild(tr);
     });
-    tbl.appendChild(tb);card.appendChild(tbl);return card;
+    tbl.appendChild(tb); card.appendChild(tbl); return card;
   }
 
   function matchView(s,mi){
@@ -549,7 +668,7 @@ section[id^="view-"]{animation:rise .4s both}
       card.appendChild(h);
       const st=C.tableStandings(s,mi,t);
       if(s.mode==="solo")card.appendChild(soloTable(s,mi,t,st));
-      else if(s.mode==="team")card.appendChild(teamTable(s,mi,t,st));
+      else if(C.MODES[s.mode]?.isTeam) card.appendChild(teamTable(s,mi,t,st));
       else card.appendChild(doubleTable(s,mi,t,st));
       frag.appendChild(card);
     }
@@ -608,8 +727,7 @@ section[id^="view-"]{animation:rise .4s both}
       rc.appendChild(inp);tr.appendChild(rc);
       const nc=el("td");
       const wrap=el("div");wrap.style.cssText="display:flex;flex-direction:column;gap:2px";
-      wrap.appendChild(el("strong","",p.name));
-      const ml=el("span","memberline");
+      const ml=el("div","memberline");
       p.members.forEach(m=>{const chip=el("span","memberchip");const a=avImg(C.avatarOf(s,m.pid),"sm");if(a)chip.appendChild(a);chip.appendChild(el("span","",m.name));ml.appendChild(chip);});
       wrap.appendChild(ml);nc.appendChild(wrap);tr.appendChild(nc);
       tr.appendChild(el("td","r num pts",String(p.points)));
