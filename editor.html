@@ -102,6 +102,9 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
 .tag{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--border)}
 .tag.ok{color:var(--cyan-deep);border-color:color-mix(in srgb,var(--cyan) 40%,transparent);background:color-mix(in srgb,var(--cyan) 10%,transparent)}
 .tag.no{color:var(--muted)}
+.tag.pending{color:var(--muted);border-style:dashed}
+.tag.checking{color:var(--pink-deep);border-color:color-mix(in srgb,var(--pink) 40%,transparent);background:color-mix(in srgb,var(--pink) 8%,transparent)}
+.tag.bad{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,transparent);background:color-mix(in srgb,var(--danger) 8%,transparent)}
 .muted{color:var(--muted);font-size:13px}
 
 /* manual grid */
@@ -169,6 +172,10 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
       <thead><tr><th>名前</th><th>Riot ID</th><th>状態</th><th></th></tr></thead>
       <tbody id="rosterBody"></tbody>
     </table>
+    <div class="row" style="margin-top:12px;align-items:center">
+      <button class="btn" id="checkAllBtn">全員のRiot IDを実在チェック</button>
+      <span class="muted" id="checkStatus"></span>
+    </div>
     <div style="margin-top:14px">
       <div class="field"><label>まとめて追加（1行1人 ／「名前,Riot ID」でID同時登録）</label>
         <textarea id="bulk" rows="3" placeholder="むりこ&#10;Mo10C,Mo10C#JP1&#10;たろう,Taro#1234"></textarea>
@@ -233,6 +240,7 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
 (function(){
   const C=window.TFTCore, store=C.makeStore();
   let curMatch=0;
+  let checkState={};   // id -> 'checking'|'valid'|'invalid'（メモリのみ・未保存）
   const $=s=>document.querySelector(s);
   const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;};
   function toast(m){const t=$("#toast");t.textContent=m;t.classList.remove("hidden");clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.add("hidden"),2800);}
@@ -293,6 +301,39 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     $("#apiStatus").textContent="完了";toast("自動取得が完了しました");
   };
 
+  // 全員のRiot ID実在チェック（押した時だけ・結果は保存しない）
+  $("#checkAllBtn").onclick=async()=>{
+    if(!C.Riot.enabled()){toast("Worker URL が未設定です（config.js）");return;}
+    const targets=store.state.roster.filter(p=>p.riotId&&p.riotId.includes("#"));
+    if(!targets.length){toast("Riot ID登録済みの選手がいません");return;}
+    targets.forEach(p=>checkState[p.id]="checking");
+    renderRoster(store.state);
+    let ok=0,ng=0;
+    for(let i=0;i<targets.length;i++){
+      const p=targets[i];
+      $("#checkStatus").textContent=`チェック中… (${i+1}/${targets.length})`;
+      try{
+        await C.Riot.puuid(p.riotId);
+        checkState[p.id]="valid";ok++;
+      }catch(e){
+        const msg=e.message||"";
+        if(msg.includes("404")||msg.includes("形式")){ checkState[p.id]="invalid";ng++; }
+        else{
+          // キー失効・通信・レート制限などのシステム的エラー → 中断（IDの問題ではない）
+          targets.slice(i).forEach(q=>{if(checkState[q.id]==="checking")delete checkState[q.id];});
+          renderRoster(store.state);
+          $("#checkStatus").textContent="中断：API呼び出しに失敗（"+msg.slice(0,60)+"）";
+          toast("チェックを中断しました（キー失効や通信エラーの可能性）");
+          return;
+        }
+      }
+      renderRoster(store.state);
+      await new Promise(r=>setTimeout(r,120));   // レート制限に配慮
+    }
+    $("#checkStatus").textContent=`完了：実在 ${ok} ／ 無効 ${ng}`;
+    toast(`チェック完了（実在${ok}・無効${ng}）`);
+  };
+
   $("#exportBtn").onclick=()=>{
     const blob=new Blob([JSON.stringify(store.state,null,2)],{type:"application/json"});
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="tft-board-"+store.boardId+".json";a.click();
@@ -317,11 +358,22 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     s.roster.forEach(p=>{
       const tr=el("tr");
       const tdN=el("td","mst-name");const inN=el("input");inN.value=p.name;inN.onchange=()=>store.updatePlayer(p.id,{name:inN.value.trim()||p.name});tdN.appendChild(inN);tr.appendChild(tdN);
-      const tdR=el("td","mst-riot");const inR=el("input");inR.value=p.riotId||"";inR.placeholder="Name#TAG";inR.onchange=()=>store.updatePlayer(p.id,{riotId:inR.value.trim()});tdR.appendChild(inR);tr.appendChild(tdR);
-      const tdS=el("td");const ok=p.riotId&&p.riotId.includes("#");tdS.appendChild(el("span","tag "+(ok?"ok":"no"),ok?"API可":"ID未"));tr.appendChild(tdS);
+      const tdR=el("td","mst-riot");const inR=el("input");inR.value=p.riotId||"";inR.placeholder="Name#TAG";inR.onchange=()=>{delete checkState[p.id];store.updatePlayer(p.id,{riotId:inR.value.trim()});};tdR.appendChild(inR);tr.appendChild(tdR);
+      const tdS=el("td");tdS.appendChild(stateTag(p));tr.appendChild(tdS);
       const tdX=el("td");const del=el("button","btn danger sm","削除");del.onclick=()=>{if(confirm(`「${p.name}」を削除しますか？`))store.removePlayer(p.id);};tdX.appendChild(del);tr.appendChild(tdX);
       body.appendChild(tr);
     });
+  }
+
+  // 状態ラベル：ID未 / 未確認 / 確認中… / 実在✓ / 無効✗
+  function stateTag(p){
+    const hasId=p.riotId&&p.riotId.includes("#");
+    if(!hasId)            return el("span","tag no","ID未");
+    const st=checkState[p.id];
+    if(st==="checking")   return el("span","tag checking","確認中…");
+    if(st==="valid")      return el("span","tag ok","実在✓");
+    if(st==="invalid")    return el("span","tag bad","無効✗");
+    return el("span","tag pending","未確認");
   }
 
   function renderMatchSel(s){
