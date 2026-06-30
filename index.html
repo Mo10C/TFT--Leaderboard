@@ -376,12 +376,16 @@ section[id^="view-"]{animation:rise .4s both}
     document.querySelectorAll(".mode").forEach(m=>m.classList.toggle("on",m.dataset.mode===s.mode));
     $("#modeHint").textContent=modeHint(s.mode);
     if(curMatch>=s.matchCount)curMatch=s.matchCount-1;
-    if(curTab==="setup"){renderPool(s);renderMatchSel(s);renderTables(s);}
+    if(curTab==="setup"){
+      renderPool(s);
+      if(s.mode==="team"){$("#matchSel").innerHTML="";renderTeamSetup(s);}
+      else{renderMatchSel(s);renderTables(s);}
+    }
     else renderResults(s);
   }
   function modeHint(mode){
     if(mode==="solo")return "個人戦：1位8pt 〜 8位1pt";
-    if(mode==="team")return "チーム戦：4人×2チーム／各員の獲得pt合計が多いチームの勝ち";
+    if(mode==="team")return "チーム戦：4人×N チーム（卓数×2）／チーム内メンバーの合計ptで順位";
     return "ダブルアップ：4ペア／1位8・2位6・3位4・4位2pt（両者に付与）";
   }
 
@@ -389,7 +393,8 @@ section[id^="view-"]{animation:rise .4s both}
     const pool=$("#pool");pool.innerHTML="";
     if(!s.roster.length){pool.appendChild(el("div","pool-empty","名前を追加するとここにPOPが出ます"));return;}
     const placed=new Set();
-    s.matches[curMatch]?.tables.forEach(tb=>tb.seats.forEach(id=>id&&placed.add(id)));
+    if(s.mode==="team")(s.teams||[]).forEach(tm=>tm.members.forEach(id=>id&&placed.add(id)));
+    else s.matches[curMatch]?.tables.forEach(tb=>tb.seats.forEach(id=>id&&placed.add(id)));
     s.roster.forEach(p=>{
       const c=el("div","chip"+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":""));
       c.draggable=true;c.dataset.pid=p.id;
@@ -424,8 +429,50 @@ section[id^="view-"]{animation:rise .4s both}
       h.appendChild(el("span","cnt",tb.seats.filter(Boolean).length+"/8"));
       card.appendChild(h);
       if(s.mode==="solo")card.appendChild(seatGroup(s,t,null,0,8));
-      else if(s.mode==="team"){card.appendChild(seatGroup(s,t,C.teamName(s,0),0,4));card.appendChild(seatGroup(s,t,C.teamName(s,1),4,8,"t2"));}
       else for(let g=0;g<4;g++)card.appendChild(seatGroup(s,t,C.pairName(s,g),g*2,g*2+2));
+      wrap.appendChild(card);
+    }
+  }
+
+  /* ---- チーム戦：チーム設定（名前＋メンバー4人、卓数×2チーム、全試合で固定）---- */
+  function renderTeamSetup(s){
+    const wrap=$("#tables");wrap.innerHTML="";
+    const teamCount=s.tableCount*2;
+    for(let i=0;i<teamCount;i++){
+      const tableIdx=Math.floor(i/2);
+      const card=el("div","table");
+      const h=el("div","table-h");
+      h.appendChild(el("span","thx",String(i+1)));
+      const nameInp=el("input");nameInp.value=C.teamName(s,i);
+      nameInp.style.cssText="font:inherit;font-weight:800;font-size:15px;border:none;background:transparent;flex:1;min-width:0;padding:0;color:inherit";
+      nameInp.onchange=()=>store.setTeamName(i,nameInp.value);
+      h.appendChild(nameInp);
+      h.appendChild(el("span","cnt","卓"+(tableIdx+1)));
+      card.appendChild(h);
+      const g=el("div","grp");
+      const seats=el("div","seats");
+      const team=(s.teams&&s.teams[i])||{members:[]};
+      for(let k=0;k<4;k++){
+        const pid=team.members[k];
+        const seat=el("div","seat "+(pid?"filled":"empty"));
+        seat.dataset.seat=k;
+        seat.appendChild(el("span","sn",String(k+1)));
+        if(pid){const a=avImg(C.avatarOf(s,pid),"sm");if(a)seat.appendChild(a);}
+        seat.appendChild(el("span","nm",pid?C.nameOf(s,pid):"空き"));
+        if(pid){const rm=el("span","rm","×");rm.onclick=e=>{e.stopPropagation();store.setTeamMember(i,k,null);};seat.appendChild(rm);}
+        seat.onclick=()=>{
+          if(selectedChip){store.setTeamMember(i,k,selectedChip);selectedChip=null;}
+          else if(pid){selectedChip=pid;renderPool(s);}
+        };
+        seat.addEventListener("dragover",e=>{e.preventDefault();seat.classList.add("over");});
+        seat.addEventListener("dragleave",()=>seat.classList.remove("over"));
+        seat.addEventListener("drop",e=>{e.preventDefault();seat.classList.remove("over");
+          let d;try{d=JSON.parse(e.dataTransfer.getData("text/plain"));}catch(_){return;}
+          if(d&&d.pid)store.setTeamMember(i,k,d.pid);});
+        if(pid){seat.draggable=true;seat.addEventListener("dragstart",e=>e.dataTransfer.setData("text/plain",JSON.stringify({pid,from:"team"})));}
+        seats.appendChild(seat);
+      }
+      g.appendChild(seats);card.appendChild(g);
       wrap.appendChild(card);
     }
   }

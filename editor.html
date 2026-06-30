@@ -394,20 +394,31 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     renderTeams(s);renderRoster(s);renderMatchSel(s);renderManual(s);
   }
 
-  // チーム名（4v4=2）/ ペア名（ダブルアップ=4）の編集
+  // チーム名/メンバー（4v4=卓数×2）/ ペア名（ダブルアップ=4）の編集
   function renderTeams(s){
     const card=$("#teamCard"),row=$("#teamNameRow"),desc=$("#teamDesc");
     row.innerHTML="";
     if(s.mode==="solo"){card.classList.add("hidden");return;}
     card.classList.remove("hidden");
     if(s.mode==="team"){
-      desc.textContent="左4席＝チーム1／右4席＝チーム2。固定チームで全試合 通算します。";
-      [0,1].forEach(i=>{
-        const f=el("div","field");f.style.minWidth="180px";
-        f.appendChild(el("label","","チーム"+(i+1)+"の名前"));
+      const teamCount=s.tableCount*2;
+      desc.textContent="4人×"+teamCount+"チーム（卓数×2）。チーム内メンバーの合計ptで全体順位を競います。先にチームを編成してください。";
+      for(let i=0;i<teamCount;i++){
+        const tableIdx=Math.floor(i/2);
+        const wrap=el("div","field");wrap.style.cssText="min-width:220px;border:1px solid var(--border);border-radius:12px;padding:10px;gap:6px;display:flex;flex-direction:column";
+        wrap.appendChild(el("label","","卓"+(tableIdx+1)+" ・ チーム"+(i+1)));
         const inp=el("input");inp.value=C.teamName(s,i);inp.onchange=()=>store.setTeamName(i,inp.value);
-        f.appendChild(inp);row.appendChild(f);
-      });
+        wrap.appendChild(inp);
+        const team=(s.teams&&s.teams[i])||{members:[]};
+        for(let k=0;k<4;k++){
+          const sel=el("select");
+          const optNone=el("option","","（空き）");optNone.value="";sel.appendChild(optNone);
+          s.roster.forEach(p=>{const o=el("option","",p.name);o.value=p.id;if(team.members[k]===p.id)o.selected=true;sel.appendChild(o);});
+          sel.onchange=()=>store.setTeamMember(i,k,sel.value||null);
+          wrap.appendChild(sel);
+        }
+        row.appendChild(wrap);
+      }
     }else{ // doubleup
       desc.textContent="席(1,2)=ペア1 …(7,8)=ペア4。固定ペアで全試合 通算します。";
       [0,1,2,3].forEach(i=>{
@@ -465,7 +476,7 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
           block.appendChild(rankRow(names,tb.placements[a]||tb.placements[b]||"",4,v=>{[a,b].filter(Boolean).forEach(pid=>store.setPlacement(curMatch,t,pid,v));}));
         }
       }else{
-        const ranges=s.mode==="team"?[[C.teamName(s,0),0,4],[C.teamName(s,1),4,8]]:[[null,0,8]];
+        const ranges=s.mode==="team"?[[C.teamName(s,t*2),0,4],[C.teamName(s,t*2+1),4,8]]:[[null,0,8]];
         ranges.forEach(([lbl,from,to])=>{
           if(lbl)block.appendChild(el("div","grp-label",lbl));
           for(let i=from;i<to;i++){const pid=tb.seats[i];if(!pid)continue;block.appendChild(rankRow(C.nameOf(s,pid),tb.placements[pid]||"",8,v=>store.setPlacement(curMatch,t,pid,v)));}
