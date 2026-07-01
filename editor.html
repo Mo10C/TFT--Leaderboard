@@ -120,6 +120,40 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
 .tblock h4::before{content:"";width:12px;height:14px;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
 .grp-label{font-family:"Space Grotesk",sans-serif;font-size:10px;color:var(--cyan-deep);font-weight:600;letter-spacing:.08em;margin:8px 0 4px;text-transform:uppercase}
 .rinput{width:50px;text-align:center;padding:5px;border-radius:9px}
+/* 保存済みボードのPOP */
+.bpop-wrap{margin-bottom:6px}
+.bpop-lbl{font-family:"Space Grotesk",sans-serif;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:8px}
+.bpops{display:flex;flex-wrap:wrap;gap:9px;min-height:40px}
+.bpop{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-strong);border-radius:999px;
+  padding:6px 8px 6px 13px;box-shadow:var(--shadow-soft);transition:.14s;max-width:100%}
+.bpop:hover{border-color:var(--pink)}
+.bpop.cur{background:var(--grad);color:#fff;border-color:transparent}
+.bpop .bp-name{font-weight:700;font-size:13.5px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.bpop .bp-meta{font-family:"Space Grotesk",sans-serif;font-size:10.5px;opacity:.7}
+.bpop .bp-btn{width:24px;height:24px;flex:none;display:grid;place-items:center;border-radius:50%;border:1px solid var(--border);background:var(--surface-2);font-size:12px;cursor:pointer;line-height:1}
+.bpop.cur .bp-btn{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.16)}
+.bpop .bp-btn:hover{border-color:var(--pink);color:var(--pink)}
+.bpop.cur .bp-btn:hover{color:#fff;border-color:#fff}
+.bpop .bp-badge{font-family:"Space Grotesk",sans-serif;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--surface-2);color:var(--cyan-deep)}
+.bpop.cur .bp-badge{background:rgba(255,255,255,.2);color:#fff}
+/* アーカイブ */
+.arch-h{font-size:15px;font-weight:800;margin:18px 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.arch-h::before{content:"";width:12px;height:14px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.arch-sub{font-size:13px;font-weight:800;color:var(--cyan-deep);margin:14px 0 6px}
+.arch-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;table-layout:fixed}
+.arch-tbl th,.arch-tbl td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--border)}
+.arch-tbl tbody tr:last-child td{border-bottom:none}
+.arch-tbl th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.arch-tbl td.r,.arch-tbl th.r{text-align:right}.arch-tbl td.c,.arch-tbl th.c{text-align:center}
+.arch-tbl .pts{font-family:"Space Grotesk",sans-serif;font-weight:700;color:var(--cyan-deep)}
+.arch-rk{display:inline-grid;place-items:center;width:24px;height:27px;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:12px;color:var(--muted);background:var(--bg-2);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
+.arch-rk.r1{background:var(--grad);color:#fff}.arch-rk.r2{background:color-mix(in srgb,var(--cyan) 28%,var(--surface));color:var(--cyan-deep)}.arch-rk.r3{background:color-mix(in srgb,var(--pink) 26%,var(--surface));color:var(--pink-deep)}
+.arch-mem{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
+.arch-mem span{font-size:11.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:2px 8px}
+.arch-tblcard{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--surface-2)}
+.arch-tblcard h5{font-size:13px;font-weight:800;margin-bottom:8px}
+.arch-win{display:inline-block;background:var(--grad);color:#fff;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:10px;padding:1px 8px;border-radius:999px;margin-left:6px}
+.arch-empty{color:var(--muted);font-size:13px;padding:6px 0}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--pink);color:var(--ink);padding:11px 20px;border-radius:13px;font-weight:600;box-shadow:var(--shadow);z-index:50;max-width:90vw}
 .hidden{display:none!important}
 @media(max-width:560px){.mst-name input{width:104px}.mst-riot input{width:120px}}
@@ -236,17 +270,37 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
   <!-- データ管理 -->
   <section class="card">
     <h2>データ管理</h2>
-    <p class="desc">バックアップ・復元・ボード切替。</p>
+    <p class="desc">大会（ボード）の切替・名前変更・アーカイブ閲覧、バックアップ・復元。</p>
+
     <div class="row" style="margin-bottom:14px">
+      <div class="field" style="flex:1;min-width:220px"><label>この大会の名前（表示名）</label>
+        <input id="boardTitle" placeholder="例: 第3回 合宿カップ"></div>
+      <span class="muted">現在のID: <b id="curBoard" class="num"></b></span>
+    </div>
+
+    <div class="row" style="align-items:flex-start;gap:16px;margin-bottom:6px">
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div class="field"><label>IDを指定して開く（新規作成も）</label><input id="boardIdInput" placeholder="例: gasshuku-2026"></div>
+        <button class="btn" id="switchBtn">開く</button>
+      </div>
+      <div class="bpop-wrap" style="flex:1;min-width:220px">
+        <label class="bpop-lbl">保存済みのボード（タップで切替 ／ 📊アーカイブ ／ ✏️名前 ／ 🗑一覧から削除）</label>
+        <div class="bpops" id="boardPops"><span class="muted" id="boardPopsEmpty">読み込み中…</span></div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
       <button class="btn" id="exportBtn">JSONエクスポート</button>
       <label class="btn" style="display:inline-flex;align-items:center">JSONインポート
         <input type="file" id="importFile" accept="application/json" class="hidden"></label>
     </div>
-    <div class="row">
-      <div class="field"><label>ボードID切替（別大会用）</label><input id="boardIdInput" placeholder="例: gasshuku-2026"></div>
-      <button class="btn" id="switchBtn">このボードを開く</button>
-      <span class="muted">現在: <b id="curBoard" class="num"></b></span>
-    </div>
+  </section>
+
+  <!-- アーカイブ -->
+  <section class="card" id="archiveCard">
+    <h2 id="archiveTitle">アーカイブ</h2>
+    <p class="desc" id="archiveDesc">保存済みボードの <b>📊</b> を押すと、その大会の<b>総合結果</b>と<b>各試合の卓別結果</b>を読み取り専用で表示します。</p>
+    <div id="archiveBody"></div>
   </section>
 
   <!-- 危険 -->
@@ -288,6 +342,7 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     $("#curBoard").textContent=boardId;
     $("#boardLink").href="index.html"+location.search;
     refreshApiPanel();
+    refreshBoards();
     render(store.state);
   });
 
@@ -428,12 +483,129 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     const f=e.target.files[0];if(!f)return;const r=new FileReader();
     r.onload=()=>{try{store.importState(JSON.parse(r.result));toast("インポート完了");}catch(err){toast("読み込み失敗: "+err.message);}};r.readAsText(f);
   });
-  $("#switchBtn").onclick=()=>{const id=$("#boardIdInput").value.trim();if(!id)return;location.search="?board="+encodeURIComponent(id);};
+  $("#switchBtn").onclick=()=>{const id=$("#boardIdInput").value.trim();if(!id)return;openBoard(id);};
+  $("#boardIdInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("#switchBtn").click();});
   $("#clearResultsBtn").onclick=()=>{if(confirm("全試合の順位をクリアします（組卓は残ります）。よろしいですか？"))store.clearAllResults();};
   $("#resetBtn").onclick=()=>{if(confirm("このボードを完全に初期化します。元に戻せません。よろしいですか？"))store.resetBoard();};
 
+  // 大会名（現在ボードの表示名）
+  $("#boardTitle").addEventListener("change",()=>{store.setBoardTitle($("#boardTitle").value);refreshBoards();toast("大会名を保存しました");});
+
+  function openBoard(id){ location.search="?board="+encodeURIComponent(id); }
+
+  // 保存済みボードのPOPを描画
+  async function refreshBoards(){
+    const wrap=$("#boardPops");
+    let list=[];
+    try{ list=await store.listBoards(); }catch(e){ console.error(e); }
+    wrap.innerHTML="";
+    if(!list.length){wrap.appendChild(el("span","muted","保存済みのボードはまだありません"));return;}
+    list.forEach(bd=>{
+      const cur=bd.id===store.boardId;
+      const chip=el("div","bpop"+(cur?" cur":""));
+      const label=(bd.title&&bd.title.trim())?bd.title:bd.id;
+      const nm=el("span","bp-name",label);nm.title=(bd.title?bd.title+"（ID: "+bd.id+"）":"ID: "+bd.id)+" — タップで開く";
+      nm.onclick=()=>{ if(cur){toast("現在開いているボードです");return;} if(confirm(`「${label}」(ID: ${bd.id}) を開きますか？`))openBoard(bd.id); };
+      chip.appendChild(nm);
+      if(cur)chip.appendChild(el("span","bp-badge","現在"));
+      const modeJp=bd.mode==="team"?"4v4":bd.mode==="doubleup"?"ダブル":bd.mode==="solo"?"個人":"";
+      if(modeJp)chip.appendChild(el("span","bp-meta",modeJp));
+      const arch=el("span","bp-btn","📊");arch.title="この大会のアーカイブ（結果）を見る";
+      arch.onclick=e=>{e.stopPropagation();openArchive(bd);};
+      chip.appendChild(arch);
+      const ren=el("span","bp-btn","✏️");ren.title="表示名を変更";
+      ren.onclick=async e=>{e.stopPropagation();const nv=prompt("大会の表示名（ID: "+bd.id+"）",bd.title||"");if(nv===null)return;await store.renameBoard(bd.id,nv);if(bd.id===store.boardId)$("#boardTitle").value=nv.trim();refreshBoards();toast("表示名を変更しました");};
+      chip.appendChild(ren);
+      if(!cur){
+        const fgt=el("span","bp-btn","🗑");fgt.title="この一覧から外す（大会データは消えません）";
+        fgt.onclick=async e=>{e.stopPropagation();if(!confirm(`「${label}」を一覧から外しますか？\n（ボードのデータ自体は削除されません。同じIDで開けば復活します）`))return;await store.forgetBoard(bd.id);refreshBoards();toast("一覧から外しました");};
+        chip.appendChild(fgt);
+      }
+      wrap.appendChild(chip);
+    });
+  }
+
+  /* ======== アーカイブ（読み取り専用の結果ビュー）======== */
+  async function openArchive(bd){
+    const body=$("#archiveBody");
+    $("#archiveTitle").textContent="アーカイブ：" + ((bd.title&&bd.title.trim())?bd.title:bd.id);
+    body.innerHTML='<div class="muted">読み込み中…</div>';
+    $("#archiveCard").scrollIntoView&&$("#archiveCard").scrollIntoView({behavior:"smooth",block:"start"});
+    const s=await store.loadBoardState(bd.id);
+    if(!s){body.innerHTML='<div class="arch-empty">このボードのデータが見つかりませんでした（未作成か削除済み）。</div>';return;}
+    renderArchive(s,bd);
+  }
+  function modeLabel(m){return m==="team"?"チーム戦 4v4":m==="doubleup"?"ダブルアップ":"個人戦";}
+  function renderArchive(s,bd){
+    const body=$("#archiveBody");body.innerHTML="";
+    const meta=el("div","muted");meta.style.marginBottom="8px";
+    meta.innerHTML=`ID: <b>${bd.id}</b> ／ ${modeLabel(s.mode)} ／ ${s.matchCount}試合 ${s.tableCount}卓`;
+    body.appendChild(meta);
+    // 総合結果
+    body.appendChild(el("div","arch-h",(s.mode==="solo")?"総合結果（個人累計pt）":"総合結果（チーム通算pt）"));
+    body.appendChild(archiveOverall(s));
+    // 各試合
+    for(let m=0;m<s.matchCount;m++){
+      body.appendChild(el("div","arch-h","第"+(m+1)+"試合"));
+      for(let t=0;t<s.tableCount;t++)body.appendChild(archiveTable(s,m,t));
+    }
+  }
+  function rkCell(n){const sp=el("span","arch-rk"+(n<=3?(" r"+n):""),String(n));return sp;}
+  function memberLine(members){const d=el("div","arch-mem");(members||[]).forEach(m=>d.appendChild(el("span","",m.name)));return d;}
+  function archiveOverall(s){
+    if(s.mode==="solo"){
+      const rows=C.overallStandings(s);
+      if(!rows.length)return el("div","arch-empty","まだ結果がありません");
+      const tbl=el("table","arch-tbl");tbl.innerHTML="<thead><tr><th style='width:56px'>順位</th><th>選手</th><th class='c' style='width:64px'>試合</th><th class='r' style='width:80px'>合計pt</th></tr></thead>";
+      const tb=el("tbody");
+      rows.forEach((r,i)=>{const tr=el("tr");const c=el("td","c");c.appendChild(rkCell(i+1));tr.appendChild(c);tr.appendChild(el("td","",r.name));tr.appendChild(el("td","c",String(r.games)));const p=el("td","r pts",String(r.points));tr.appendChild(p);tb.appendChild(tr);});
+      tbl.appendChild(tb);return tbl;
+    }
+    const list=(s.mode==="team")?C.teamOverall(s):C.pairOverall(s);
+    if(!list.length)return el("div","arch-empty","まだ結果がありません");
+    const tbl=el("table","arch-tbl");tbl.innerHTML="<thead><tr><th style='width:56px'>順位</th><th>チーム</th><th class='c' style='width:64px'>試合</th><th class='r' style='width:80px'>合計pt</th></tr></thead>";
+    const tb=el("tbody");
+    list.forEach((r,i)=>{const tr=el("tr");const c=el("td","c");c.appendChild(rkCell(i+1));tr.appendChild(c);
+      const nc=el("td","");const w=el("div");w.appendChild(el("strong","",r.name));if(r.members&&r.members.length)w.appendChild(memberLine(r.members));nc.appendChild(w);tr.appendChild(nc);
+      tr.appendChild(el("td","c",String(r.games)));tr.appendChild(el("td","r pts",String(r.points)));tb.appendChild(tr);});
+    tbl.appendChild(tb);return tbl;
+  }
+  function archiveTable(s,mi,ti){
+    const card=el("div","arch-tblcard");
+    card.appendChild(el("h5","","卓 "+(ti+1)));
+    const st=C.tableStandings(s,mi,ti);
+    if(s.mode==="solo"){
+      if(!st.rows.length){card.appendChild(el("div","arch-empty","選手なし"));return card;}
+      const tbl=el("table","arch-tbl");tbl.innerHTML="<thead><tr><th style='width:52px'>順位</th><th>選手</th><th class='r' style='width:70px'>pt</th></tr></thead>";
+      const tb=el("tbody");
+      st.rows.forEach(r=>{const tr=el("tr");const c=el("td","c");c.appendChild(r.rank?rkCell(r.rank):el("span","muted","–"));tr.appendChild(c);tr.appendChild(el("td","",r.name));tr.appendChild(el("td","r pts",String(r.points)));tb.appendChild(tr);});
+      tbl.appendChild(tb);card.appendChild(tbl);return card;
+    }
+    if(s.mode==="team"){
+      st.teams.forEach((tm,idx)=>{
+        const win=st.teams.length>1&&idx===0&&tm.total>st.teams[1].total;
+        const h=el("div","arch-sub");h.appendChild(document.createTextNode(tm.name+"（"+tm.total+"pt）"));if(win)h.appendChild(el("span","arch-win","WIN"));card.appendChild(h);
+        if(!tm.members.length){card.appendChild(el("div","arch-empty","選手なし"));return;}
+        const tbl=el("table","arch-tbl");tbl.innerHTML="<thead><tr><th style='width:52px'>順位</th><th>選手</th><th class='r' style='width:70px'>pt</th></tr></thead>";
+        const tb=el("tbody");
+        tm.members.forEach(r=>{const tr=el("tr");const c=el("td","c");c.appendChild(r.rank?rkCell(r.rank):el("span","muted","–"));tr.appendChild(c);tr.appendChild(el("td","",r.name));tr.appendChild(el("td","r pts",String(r.points)));tb.appendChild(tr);});
+        tbl.appendChild(tb);card.appendChild(tbl);
+      });
+      return card;
+    }
+    // doubleup
+    if(!st.pairs.length){card.appendChild(el("div","arch-empty","チームなし"));return card;}
+    const tbl=el("table","arch-tbl");tbl.innerHTML="<thead><tr><th style='width:52px'>順位</th><th>チーム</th><th class='r' style='width:70px'>pt</th></tr></thead>";
+    const tb=el("tbody");
+    st.pairs.forEach(p=>{const tr=el("tr");const c=el("td","c");c.appendChild(p.rank?rkCell(p.rank):el("span","muted","–"));tr.appendChild(c);
+      const nc=el("td","");const w=el("div");w.appendChild(el("strong","",p.name));if(p.members&&p.members.length)w.appendChild(memberLine(p.members));nc.appendChild(w);tr.appendChild(nc);
+      tr.appendChild(el("td","r pts",String(p.points)));tb.appendChild(tr);});
+    tbl.appendChild(tb);card.appendChild(tbl);return card;
+  }
+
   function render(s){
     $("#mode").value=s.mode;$("#matchCount").value=s.matchCount;$("#tableCount").value=s.tableCount;
+    if(document.activeElement!==$("#boardTitle"))$("#boardTitle").value=s.title||"";
     if(curMatch>=s.matchCount)curMatch=s.matchCount-1;
     renderTeams(s);renderRoster(s);renderMatchSel(s);renderManual(s);
   }

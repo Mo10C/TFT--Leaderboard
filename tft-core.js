@@ -148,11 +148,12 @@
     const teams = buildTeams(tc), pairs = buildPairs(tc);
     return {
       mode,
+      title: "",                        // 大会（ボード）の表示名
       matchCount: mc,
       tableCount: tc,
       roster: [],                       // [{id,name,riotId,discordId,discordAvatar}]
-      teams,                            // [{id,name}] 4v4（卓数×2）
-      pairs,                            // [{id,name}] ダブルアップ（卓数×4）
+      teams,                            // [{id,name,members}] 4v4（卓数×2）
+      pairs,                            // [{id,name,members}] ダブルアップ（卓数×4）
       matches: buildMatches(mc, tc, teams, pairs),
       updatedAt: Date.now()
     };
@@ -193,6 +194,10 @@
     let docRef = null;
     let applyingRemote = false;
     let saveTimer = null;
+    let indexRef = null;                 // ボード索引ドキュメント（firestore時）
+    const INDEX_LS_KEY = "tft-board-index";
+    function idxKey(id) { return encodeURIComponent(id); }
+    function boardLsKey(id) { return "tftboard:" + id; }
 
     function getBoardId() {
       const p = new URLSearchParams(location.search);
@@ -214,6 +219,7 @@
           if (!firebase.apps.length) firebase.initializeApp(fb);
           db = firebase.firestore();
           docRef = db.collection("boards").doc(boardId);
+          indexRef = db.collection("board_index").doc("registry");
           mode = "firestore";
 
           const snap = await docRef.get();
@@ -227,6 +233,7 @@
             applyingRemote = false;
             emit();
           }, err => console.error("onSnapshot", err));
+          upsertIndex();  // このボードを索引に登録
           return { mode, boardId };
         } catch (e) {
           console.error("Firebase init failed, falling back to local:", e);
@@ -246,6 +253,7 @@
         }
       });
       emit();
+      upsertIndex();  // このボードを索引に登録
       return { mode, boardId };
     }
 
@@ -255,6 +263,7 @@
     function normalize(data) {
       const s = Object.assign(blankState(), data || {});
       if (!MODES[s.mode]) s.mode = "solo";
+      s.title = typeof s.title === "string" ? s.title : "";
       s.matchCount = Math.max(1, s.matchCount | 0 || 1);
       s.tableCount = Math.max(1, s.tableCount | 0 || 1);
       if (!Array.isArray(s.roster)) s.roster = [];
@@ -326,7 +335,90 @@
         } else {
           localStorage.setItem(lsKey(), JSON.stringify(state));
         }
+        upsertIndex();
       } catch (e) { console.error("persist failed", e); }
+    }
+
+    /* ---- ボード索引（保存済みボードの一覧＋表示名）---- */
+    function indexEntry() {
+      return { title: state.title || "", mode: state.mode, matchCount: state.matchCount, tableCount: state.tableCount, updatedAt: state.updatedAt || Date.now() };
+    }
+    async function upsertIndex() {
+      try {
+        if (mode === "firestore" && indexRef) {
+          await indexRef.set({ boards: { [idxKey(boardId)]: indexEntry() } }, { merge: true });
+        } else {
+          const idx = JSON.parse(localStorage.getItem(INDEX_LS_KEY) || "{}");
+          idx[boardId] = indexEntry();
+          localStorage.setItem(INDEX_LS_KEY, JSON.stringify(idx));
+        }
+      } catch (e) { console.error("index upsert failed", e); }
+    }
+    // 保存済みボード一覧（{id,title,mode,matchCount,tableCount,updatedAt} の配列。更新が新しい順）
+    async function listBoards() {
+      let map = {};
+      try {
+        if (mode === "firestore" && indexRef) {
+          const snap = await indexRef.get();
+          if (snap.exists) {
+            const raw = (snap.data() || {}).boards || {};
+            Object.entries(raw).forEach(([k, v]) => { map[decodeURIComponent(k)] = v; });
+          }
+        } else {
+          map = JSON.parse(localStorage.getItem(INDEX_LS_KEY) || "{}");
+        }
+      } catch (e) { console.error("listBoards", e); map = {}; }
+      if (!map[boardId]) map[boardId] = indexEntry();
+      return Object.entries(map).map(([id, v]) => ({
+        id, title: (v && v.title) || "", mode: v && v.mode,
+        matchCount: v && v.matchCount, tableCount: v && v.tableCount, updatedAt: (v && v.updatedAt) || 0
+      })).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    }
+    // 現在のボードの表示名を設定
+    function setBoardTitle(name) { state.title = (name || "").trim(); save(); }
+    // 任意ボードの表示名を変更（索引の表示名を更新。現在のボードなら state も更新）
+    async function renameBoard(id, name) {
+      name = (name || "").trim();
+      if (id === boardId) { setBoardTitle(name); return; }
+      try {
+        if (mode === "firestore" && indexRef) {
+          await indexRef.set({ boards: { [idxKey(id)]: { title: name } } }, { merge: true });
+          // 可能ならボード本体の title も更新
+          try { await db.collection("boards").doc(id).set({ title: name }, { merge: true }); } catch (e) { }
+        } else {
+          const idx = JSON.parse(localStorage.getItem(INDEX_LS_KEY) || "{}");
+          if (!idx[id]) idx[id] = {};
+          idx[id].title = name;
+          localStorage.setItem(INDEX_LS_KEY, JSON.stringify(idx));
+          const raw = localStorage.getItem(boardLsKey(id));
+          if (raw) { try { const o = JSON.parse(raw); o.title = name; localStorage.setItem(boardLsKey(id), JSON.stringify(o)); } catch (e) { } }
+        }
+      } catch (e) { console.error("renameBoard", e); }
+    }
+    // 索引からボードを外す（本体データは消さない）
+    async function forgetBoard(id) {
+      try {
+        if (mode === "firestore" && indexRef) {
+          const upd = {}; upd["boards." + idxKey(id)] = firebase.firestore.FieldValue.delete();
+          await indexRef.update(upd);
+        } else {
+          const idx = JSON.parse(localStorage.getItem(INDEX_LS_KEY) || "{}");
+          delete idx[id];
+          localStorage.setItem(INDEX_LS_KEY, JSON.stringify(idx));
+        }
+      } catch (e) { console.error("forgetBoard", e); }
+    }
+    // 別ボードの状態を読み取り専用で取得（アーカイブ閲覧用）。切替はしない。
+    async function loadBoardState(id) {
+      try {
+        if (mode === "firestore" && db) {
+          const snap = await db.collection("boards").doc(id).get();
+          return snap.exists ? normalize(snap.data()) : null;
+        } else {
+          const raw = localStorage.getItem(boardLsKey(id));
+          return raw ? normalize(JSON.parse(raw)) : null;
+        }
+      } catch (e) { console.error("loadBoardState", e); return null; }
     }
 
     /* ---- ミューテーション群 ---- */
@@ -651,6 +743,7 @@
       setTeamName, setPairName, setTeamMember, setPairMember,
       setMatchTeamSlot, setMatchPairSlot, applyRosterToMatch, shuffleMatchups,
       setPresent, setAllPresent, autoAssign,
+      listBoards, setBoardTitle, renameBoard, forgetBoard, loadBoardState,
       _persistNow: persist
     };
   }
