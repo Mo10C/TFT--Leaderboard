@@ -142,6 +142,12 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 6.5'/%3E%3C/svg%3E"),linear-gradient(rgba(255,255,255,.32),rgba(255,255,255,.32));
   background-repeat:no-repeat,no-repeat;background-position:center,center;background-size:13px 13px,cover}
 .pool-empty{color:var(--muted);font-size:13px}
+/* POPプールを上部に固定：下の卓へ割り当て中も選手チップが見え続ける */
+.pool-hint{margin:0 0 14px}
+.pool-panel{position:sticky;top:8px;z-index:40;margin-top:0;
+  box-shadow:0 10px 24px -14px rgba(0,0,0,.28),var(--shadow-soft)}
+.pool-panel .pool{max-height:min(32vh,208px);overflow:auto;overscroll-behavior:contain;
+  padding:2px;margin:-2px;-webkit-overflow-scrolling:touch}
 
 /* ---------- match selector ---------- */
 .matchsel{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 14px}
@@ -170,6 +176,17 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
   clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
 .table-h h3{font-size:16px;font-weight:800}
 .table-h .cnt{margin-left:auto;font-family:"Space Grotesk";font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 10px}
+/* チーム組：参加チェック（チーム名の左）＋参加外カードの見た目 */
+.team-check{appearance:none;-webkit-appearance:none;-moz-appearance:none;margin:0;flex:none;
+  width:20px;height:20px;min-width:20px;border:2px solid var(--border-strong);border-radius:6px;
+  background:var(--surface);cursor:pointer;transition:border-color .14s,background-color .14s;vertical-align:middle}
+.team-check:hover{border-color:var(--cyan)}
+.team-check:checked{border-color:transparent;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 6.5'/%3E%3C/svg%3E"),var(--grad);
+  background-repeat:no-repeat,no-repeat;background-position:center,center;background-size:13px 13px,cover}
+.table.inactive{opacity:.5;filter:grayscale(.5)}
+.table.inactive .team-check{opacity:1;filter:none}
+.rtag{font-family:"Space Grotesk";font-size:10.5px;font-weight:700;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:1px 8px;flex:none}
 .grp{padding:12px 16px}
 .grp-label{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:600;color:var(--cyan-deep);letter-spacing:.1em;margin:2px 0 8px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
 .grp-label::before{content:"";width:9px;height:10px;background:var(--cyan);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
@@ -303,7 +320,8 @@ section[id^="view-"]{animation:rise .4s both}
 
   <!-- ============ SETUP ============ -->
   <section id="view-setup">
-    <div class="panel">
+    <div class="hint pool-hint">各POPの<b>チェック</b>でこの試合の参加者を切替（既定＝全員参加）。チップをタップ → 席をタップで配置（PCはドラッグも可）。<b>チーム戦／ダブルアップ</b>は <b>🧩 チーム組</b> タブでチーム名と既定メンバーを設定（名前の左の<b>☑</b>で参加チームを選択）→ 各試合は枠上部の <b>▼</b> でチームを選ぶとその編成を引き継ぎます（試合ごとに入替も可）。</div>
+    <div class="panel pool-panel">
       <div class="pool-head">
         <h3>選手 POP</h3>
         <div class="addrow">
@@ -311,7 +329,6 @@ section[id^="view-"]{animation:rise .4s both}
           <button class="btn grad" id="addBtn">追加</button>
         </div>
       </div>
-      <div class="hint" style="margin-bottom:10px">各POPの<b>チェック</b>でこの試合の参加者を切替（既定＝全員参加）。チップをタップ → 席をタップで配置（PCはドラッグも可）。<b>チーム戦／ダブルアップ</b>は <b>🧩 チーム組</b> タブでチーム名と既定メンバーを設定 → 各試合は枠上部の <b>▼</b> でチームを選ぶとその編成を引き継ぎます（試合ごとに入替も可）。</div>
       <div class="pool" id="pool"></div>
     </div>
 
@@ -547,23 +564,30 @@ section[id^="view-"]{animation:rise .4s both}
     const info=el("div","assign-info");
     const cnt=(s.mode==="team")?(s.teams||[]).length:(s.pairs||[]).length;
     const size=(s.mode==="team")?4:2;
-    info.innerHTML=`<span class="assign-h">🧩 チーム組</span><b class="num">${cnt}</b>チーム（各${size}名）を編成。<span class="muted" style="font-size:12px">本番は各試合で卓のチームを選ぶと、この編成が引き継がれます（試合ごとに入替も可）</span>`;
+    const list=(s.mode==="team")?(s.teams||[]):(s.pairs||[]);
+    const actCnt=list.filter(g=>C.rosterActive(g)).length;
+    info.innerHTML=`<span class="assign-h">🧩 チーム組</span><b class="num">${actCnt}</b>/${cnt}チーム参加（各${size}名）。<span class="muted" style="font-size:12px">名前の左の☑で参加チームを選択。本番は各試合で卓のチームを選ぶとこの編成が引き継がれます（試合ごとに入替も可）</span>`;
     panel.appendChild(info);
     const acts=el("div","assign-acts");
-    const list=(s.mode==="team")?(s.teams||[]):(s.pairs||[]);
     const rnd=el("button","btn grad sm","🎲 ランダムでチーム分け");
-    rnd.title="ロスターの選手をシャッフルして各チームの既定メンバーへ割り当てます";
+    rnd.title="ロスターの選手をシャッフルして、参加チームの既定メンバーへ割り当てます";
     rnd.onclick=()=>{
       if(!s.roster.length){toast("選手がいません（先にPOPを追加）");return;}
       if(list.some(g=>(g.members||[]).some(Boolean))&&!confirm("現在のチーム編成を破棄して、ランダムに組み直しますか？"))return;
-      store.shuffleRosterTeams();toast("ランダムでチーム分けしました");
+      store.shuffleRosterTeams();toast("参加チームへランダム分けしました");
     };
+    const allOn=el("button","btn sm","全チーム 参加");
+    allOn.title="すべてのチームを参加にします";
+    allOn.onclick=()=>store.setAllRosterActive(true);
+    const allOff=el("button","btn sm","全チーム 外す");
+    allOff.title="すべてのチームを参加外にします";
+    allOff.onclick=()=>{ if(confirm("すべてのチームを参加外にしますか？"))store.setAllRosterActive(false); };
     const clr=el("button","btn sm","全クリア");
     clr.title="すべてのチームの既定メンバーを空にします";
     clr.onclick=()=>{ if(confirm("すべてのチームの既定メンバーをクリアしますか？"))store.clearRosterTeams(); };
     const goMatch=el("button","btn sm","第1試合へ →");
     goMatch.onclick=()=>{rosterTab=false;curMatch=0;render(s);};
-    acts.append(rnd,clr,goMatch);
+    acts.append(rnd,allOn,allOff,clr,goMatch);
     panel.appendChild(acts);
     bar.appendChild(panel);
   }
@@ -575,14 +599,20 @@ section[id^="view-"]{animation:rise .4s both}
     const size=isTeam?4:2;
     list.forEach((g,i)=>{
       const tableIdx=isTeam?Math.floor(i/2):Math.floor(i/4);
-      const card=el("div","table");
+      const active=C.rosterActive(g);
+      const card=el("div","table"+(active?"":" inactive"));
       const h=el("div","table-h");
       h.appendChild(el("span","thx",String(i+1)));
+      const chk=el("input","team-check");chk.type="checkbox";chk.checked=active;
+      chk.title="このチームを大会に参加させる（外すとランダム分け・チーム組反映・シャッフルの対象外）";
+      chk.onchange=()=>{ isTeam?store.setTeamActive(g.id,chk.checked):store.setPairActive(g.id,chk.checked); };
+      h.appendChild(chk);
       const nameInp=el("input");nameInp.value=g.name;
       nameInp.style.cssText="font:inherit;font-weight:800;font-size:15px;border:none;background:transparent;flex:1;min-width:0;padding:0;color:inherit";
       nameInp.title="チーム名";
       nameInp.onchange=()=>{ isTeam?store.setTeamName(g.id,nameInp.value):store.setPairName(g.id,nameInp.value); };
       h.appendChild(nameInp);
+      if(!active)h.appendChild(el("span","rtag","参加外"));
       h.appendChild(el("span","cnt","既定卓"+(tableIdx+1)));
       card.appendChild(h);
       const grp=el("div","grp");
@@ -674,7 +704,7 @@ section[id^="view-"]{animation:rise .4s both}
     const g=el("div","grp grp-team");
     const head=el("div","grp-select"+(side===1?" t2":""));
     const sel=el("select","teamsel");
-    (s.teams||[]).forEach(tm=>{const o=el("option","",tm.name);o.value=tm.id;if((tb.teamSlots||[])[side]===tm.id)o.selected=true;sel.appendChild(o);});
+    (s.teams||[]).forEach(tm=>{const o=el("option","",tm.name+(C.rosterActive(tm)?"":"（参加外）"));o.value=tm.id;if((tb.teamSlots||[])[side]===tm.id)o.selected=true;sel.appendChild(o);});
     sel.title="この試合にこのサイドで対戦するチーム";
     sel.onchange=()=>store.setMatchTeamSlot(curMatch,tableIdx,side,sel.value);
     head.appendChild(sel);g.appendChild(head);
@@ -689,7 +719,7 @@ section[id^="view-"]{animation:rise .4s both}
     const g=el("div","grp grp-pair");
     const head=el("div","grp-select");
     const sel=el("select","teamsel");
-    (s.pairs||[]).forEach(pr=>{const o=el("option","",pr.name);o.value=pr.id;if((tb.pairSlots||[])[gi]===pr.id)o.selected=true;sel.appendChild(o);});
+    (s.pairs||[]).forEach(pr=>{const o=el("option","",pr.name+(C.rosterActive(pr)?"":"（参加外）"));o.value=pr.id;if((tb.pairSlots||[])[gi]===pr.id)o.selected=true;sel.appendChild(o);});
     sel.title="この試合にこの枠で対戦するチーム（2人組）";
     sel.onchange=()=>store.setMatchPairSlot(curMatch,tableIdx,gi,sel.value);
     head.appendChild(sel);g.appendChild(head);

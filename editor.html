@@ -620,11 +620,21 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     const list=isTeam?(s.teams||[]):(s.pairs||[]);
     const size=isTeam?4:2;
     desc.textContent=isTeam
-      ? "4v4のチーム名と既定メンバー（"+list.length+"チーム×4名）。各試合で卓にチームを選ぶとこの編成が引き継がれます（本番ボードの🧩チーム組と同じ）。"
-      : "ダブルアップのチーム名と既定メンバー（"+list.length+"チーム×2名）。各試合で卓にチームを選ぶとこの編成が引き継がれます（本番ボードの🧩チーム組と同じ）。";
+      ? "4v4のチーム名と既定メンバー（"+list.length+"チーム×4名）。各チームの「参加」☑で大会参加を切替（外すとランダム分け・反映・シャッフルの対象外）。各試合で卓にチームを選ぶとこの編成が引き継がれます（本番ボードの🧩チーム組と同じ）。"
+      : "ダブルアップのチーム名と既定メンバー（"+list.length+"チーム×2名）。各チームの「参加」☑で大会参加を切替（外すとランダム分け・反映・シャッフルの対象外）。各試合で卓にチームを選ぶとこの編成が引き継がれます（本番ボードの🧩チーム組と同じ）。";
     list.forEach((g,i)=>{
+      const active=C.rosterActive(g);
       const wrap=el("div","field");wrap.style.cssText="min-width:200px;border:1px solid var(--border);border-radius:12px;padding:10px;gap:6px;display:flex;flex-direction:column";
-      wrap.appendChild(el("label","","チーム"+(i+1)));
+      if(!active)wrap.style.opacity=".55";
+      const head=el("div");head.style.cssText="display:flex;align-items:center;gap:8px;justify-content:space-between";
+      head.appendChild(el("label","","チーム"+(i+1)));
+      const lab=el("label");lab.style.cssText="display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:normal;cursor:pointer;color:var(--text)";
+      const chk=el("input");chk.type="checkbox";chk.checked=active;chk.style.cssText="width:16px;height:16px;cursor:pointer";
+      chk.title="このチームを大会に参加させる（外すとランダム分け・チーム組反映・シャッフルの対象外）";
+      chk.onchange=()=>{ isTeam?store.setTeamActive(g.id,chk.checked):store.setPairActive(g.id,chk.checked); };
+      lab.appendChild(chk);lab.appendChild(el("span","",active?"参加":"参加外"));
+      head.appendChild(lab);
+      wrap.appendChild(head);
       const inp=el("input");inp.value=g.name;
       inp.onchange=()=>{ isTeam?store.setTeamName(g.id,inp.value):store.setPairName(g.id,inp.value); };
       wrap.appendChild(inp);
