@@ -161,9 +161,9 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     </div>
   </section>
 
-  <!-- チーム名 / ペア名 -->
+  <!-- チーム組（名前＋既定メンバー） -->
   <section class="card" id="teamCard">
-    <h2>チーム名 / ペア名</h2>
+    <h2>チーム組（名前・既定メンバー）</h2>
     <p class="desc" id="teamDesc"></p>
     <div class="row" id="teamNameRow"></div>
   </section>
@@ -394,7 +394,7 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     renderTeams(s);renderRoster(s);renderMatchSel(s);renderManual(s);
   }
 
-  // チーム名 / ペア(=2人チーム)名の編集（プール・IDで指定）。メンバーと対戦は本番ボードで試合ごとに設定。
+  // チーム名＋既定メンバー（＝本番の「チーム組」）の編集。IDで指定。
   function renderTeams(s){
     const card=$("#teamCard"),row=$("#teamNameRow"),desc=$("#teamDesc");
     row.innerHTML="";
@@ -402,15 +402,23 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     card.classList.remove("hidden");
     const isTeam=s.mode==="team";
     const list=isTeam?(s.teams||[]):(s.pairs||[]);
+    const size=isTeam?4:2;
     desc.textContent=isTeam
-      ? "4v4のチーム名（"+list.length+"チーム）。メンバー配置と対戦カードは本番ボードで試合ごとに設定します。"
-      : "ダブルアップのチーム名（"+list.length+"チーム＝2人1組）。メンバー配置と対戦カードは本番ボードで試合ごとに設定します。";
+      ? "4v4のチーム名と既定メンバー（"+list.length+"チーム×4名）。各試合で卓にチームを選ぶとこの編成が引き継がれます（本番ボードの🧩チーム組と同じ）。"
+      : "ダブルアップのチーム名と既定メンバー（"+list.length+"チーム×2名）。各試合で卓にチームを選ぶとこの編成が引き継がれます（本番ボードの🧩チーム組と同じ）。";
     list.forEach((g,i)=>{
-      const wrap=el("div","field");wrap.style.cssText="min-width:180px;border:1px solid var(--border);border-radius:12px;padding:10px;gap:6px;display:flex;flex-direction:column";
+      const wrap=el("div","field");wrap.style.cssText="min-width:200px;border:1px solid var(--border);border-radius:12px;padding:10px;gap:6px;display:flex;flex-direction:column";
       wrap.appendChild(el("label","","チーム"+(i+1)));
       const inp=el("input");inp.value=g.name;
       inp.onchange=()=>{ isTeam?store.setTeamName(g.id,inp.value):store.setPairName(g.id,inp.value); };
       wrap.appendChild(inp);
+      for(let k=0;k<size;k++){
+        const sel=el("select");
+        const optNone=el("option","","（空き）");optNone.value="";sel.appendChild(optNone);
+        s.roster.forEach(p=>{const o=el("option","",p.name);o.value=p.id;if((g.members||[])[k]===p.id)o.selected=true;sel.appendChild(o);});
+        sel.onchange=()=>{ isTeam?store.setTeamMember(g.id,k,sel.value||null):store.setPairMember(g.id,k,sel.value||null); };
+        wrap.appendChild(sel);
+      }
       row.appendChild(wrap);
     });
   }

@@ -47,15 +47,18 @@
     };
   }
 
-  /* ---------- チーム/ペアのプール（名前編集可・IDで通算集計）----------
+  /* ---------- チーム/ペアのプール（名前編集可・IDで通算集計・既定メンバーを保持）----------
      teams : 4v4のチーム（卓数×2） pairs : ダブルアップのチーム=2人組（卓数×4）
-     既存があればID・名前を温存。 */
+     members = 「チーム組」タブで設定する既定メンバー（試合で卓にそのチームを選ぶと引き継がれる）。
+     既存があればID・名前・メンバーを温存。 */
   function buildTeams(tableCount, existing) {
     const n = Math.max(0, tableCount | 0) * 2;
     const out = [];
     for (let i = 0; i < n; i++) {
       const prev = existing && existing[i];
-      out.push({ id: (prev && prev.id) || genId("t"), name: (prev && prev.name) || ("チーム" + (i + 1)) });
+      const members = (prev && Array.isArray(prev.members)) ? prev.members.slice(0, 4) : [];
+      while (members.length < 4) members.push(null);
+      out.push({ id: (prev && prev.id) || genId("t"), name: (prev && prev.name) || ("チーム" + (i + 1)), members });
     }
     return out;
   }
@@ -64,7 +67,9 @@
     const out = [];
     for (let i = 0; i < n; i++) {
       const prev = existing && existing[i];
-      out.push({ id: (prev && prev.id) || genId("g"), name: (prev && prev.name) || ("チーム" + (i + 1)) });
+      const members = (prev && Array.isArray(prev.members)) ? prev.members.slice(0, 2) : [];
+      while (members.length < 2) members.push(null);
+      out.push({ id: (prev && prev.id) || genId("g"), name: (prev && prev.name) || ("チーム" + (i + 1)), members });
     }
     return out;
   }
@@ -226,9 +231,9 @@
       const teamHadMembers = oldTeams.some(t => t && Array.isArray(t.members));
       const pairHadMembers = oldPairs.some(p => p && Array.isArray(p.members));
 
-      // プールを {id,name} に正規化（IDと名前を温存）
-      s.teams = buildTeams(s.tableCount, oldTeams.map(t => ({ id: t && t.id, name: t && t.name })));
-      s.pairs = buildPairs(s.tableCount, oldPairs.map(p => ({ id: p && p.id, name: p && p.name })));
+      // プールを {id,name,members} に正規化（ID・名前・既定メンバーを温存）
+      s.teams = buildTeams(s.tableCount, oldTeams.map(t => ({ id: t && t.id, name: t && t.name, members: t && t.members })));
+      s.pairs = buildPairs(s.tableCount, oldPairs.map(p => ({ id: p && p.id, name: p && p.name, members: p && p.members })));
 
       if (!Array.isArray(s.matches)) s.matches = buildMatches(s.matchCount, s.tableCount, s.teams, s.pairs);
 
@@ -340,6 +345,9 @@
         });
         if (Array.isArray(mt.present)) mt.present = mt.present.filter(x => x !== id);
       });
+      // 既定メンバー（チーム組）からも除去
+      (state.teams || []).forEach(t => { if (Array.isArray(t.members)) t.members = t.members.map(m => (m === id ? null : m)); });
+      (state.pairs || []).forEach(p => { if (Array.isArray(p.members)) p.members = p.members.map(m => (m === id ? null : m)); });
       save();
     }
 
@@ -403,34 +411,106 @@
       save();
     }
 
-    /* ---- 対戦カード（この試合の卓の各サイド/グループに座るチーム）---- */
+    /* ---- 「チーム組」タブ：既定メンバー（テンプレート）の編集 ----
+       同一選手が複数チームの既定に重複しないよう、他チームからは自動で外す。 */
+    function setTeamMember(teamId, slot, playerId) {
+      const team = (state.teams || []).find(t => t.id === teamId);
+      if (!team) return;
+      if (!Array.isArray(team.members)) team.members = [null, null, null, null];
+      if (playerId) {
+        (state.teams || []).forEach(t => { if (Array.isArray(t.members)) { const i = t.members.indexOf(playerId); if (i >= 0) t.members[i] = null; } });
+      }
+      team.members[slot] = playerId || null;
+      save();
+    }
+    function setPairMember(pairId, slot, playerId) {
+      const pair = (state.pairs || []).find(p => p.id === pairId);
+      if (!pair) return;
+      if (!Array.isArray(pair.members)) pair.members = [null, null];
+      if (playerId) {
+        (state.pairs || []).forEach(p => { if (Array.isArray(p.members)) { const i = p.members.indexOf(playerId); if (i >= 0) p.members[i] = null; } });
+      }
+      pair.members[slot] = playerId || null;
+      save();
+    }
+
+    // 試合mt内の全席からpidを外す（重複防止）。順位も破棄。
+    function dedupInMatch(mt, pid) {
+      mt.tables.forEach(t => { const i = t.seats.indexOf(pid); if (i >= 0) { t.seats[i] = null; delete t.placements[pid]; } });
+    }
+    // チームの既定メンバーを、卓tbのサイド(0/1)の席へ流し込む
+    function fillSideFromTeam(mt, tb, side, teamId) {
+      const team = (state.teams || []).find(t => t.id === teamId);
+      const from = side * 4;
+      for (let k = 0; k < 4; k++) { const old = tb.seats[from + k]; if (old) delete tb.placements[old]; tb.seats[from + k] = null; }
+      if (team && Array.isArray(team.members)) {
+        for (let k = 0; k < 4; k++) {
+          const pid = team.members[k];
+          if (pid) { dedupInMatch(mt, pid); tb.seats[from + k] = pid; if (Array.isArray(mt.present) && !mt.present.includes(pid)) mt.present.push(pid); }
+        }
+      }
+    }
+    // ペアの既定メンバーを、卓tbのグループg(0-3)の席へ流し込む
+    function fillGroupFromPair(mt, tb, g, pairId) {
+      const pair = (state.pairs || []).find(p => p.id === pairId);
+      const from = g * 2;
+      for (let k = 0; k < 2; k++) { const old = tb.seats[from + k]; if (old) delete tb.placements[old]; tb.seats[from + k] = null; }
+      if (pair && Array.isArray(pair.members)) {
+        for (let k = 0; k < 2; k++) {
+          const pid = pair.members[k];
+          if (pid) { dedupInMatch(mt, pid); tb.seats[from + k] = pid; if (Array.isArray(mt.present) && !mt.present.includes(pid)) mt.present.push(pid); }
+        }
+      }
+    }
+
+    /* ---- 対戦カード（この試合の卓の各サイド/グループに座るチーム）----
+       チームを選ぶと、そのチームの既定メンバー（チーム組）を席へ引き継ぐ。以後は試合ごとに入替可。 */
     function setMatchTeamSlot(matchIdx, tableIdx, side, teamId) {
-      const tb = state.matches[matchIdx] && state.matches[matchIdx].tables[tableIdx];
+      const mt = state.matches[matchIdx];
+      const tb = mt && mt.tables[tableIdx];
       if (!tb) return;
       if (!Array.isArray(tb.teamSlots)) tb.teamSlots = [null, null];
       tb.teamSlots[side] = teamId || null;
+      fillSideFromTeam(mt, tb, side, teamId);
       save();
     }
     function setMatchPairSlot(matchIdx, tableIdx, group, pairId) {
-      const tb = state.matches[matchIdx] && state.matches[matchIdx].tables[tableIdx];
+      const mt = state.matches[matchIdx];
+      const tb = mt && mt.tables[tableIdx];
       if (!tb) return;
       if (!Array.isArray(tb.pairSlots)) tb.pairSlots = [null, null, null, null];
       tb.pairSlots[group] = pairId || null;
+      fillGroupFromPair(mt, tb, group, pairId);
       save();
     }
-    // この試合の対戦カードをシャッフル（プールを全スロットへランダム割当）
+    // この試合の全卓に「チーム組」の既定編成を反映（各サイド/グループを、そこに割当たっているチームの既定で埋める）
+    function applyRosterToMatch(matchIdx) {
+      const mt = state.matches[matchIdx];
+      if (!mt) return;
+      if (state.mode === "team") {
+        mt.tables.forEach(tb => { for (let side = 0; side < 2; side++) fillSideFromTeam(mt, tb, side, (tb.teamSlots || [])[side]); });
+      } else if (state.mode === "doubleup") {
+        mt.tables.forEach(tb => { for (let g = 0; g < 4; g++) fillGroupFromPair(mt, tb, g, (tb.pairSlots || [])[g]); });
+      }
+      save();
+    }
+    // この試合の対戦カードをシャッフル（プールを全スロットへランダム割当）。各枠は既定メンバーを引き継ぐ。
     function shuffleMatchups(matchIdx) {
       const mt = state.matches[matchIdx];
       if (!mt) return;
       if (state.mode === "team") {
         const ids = (state.teams || []).map(t => t.id);
         for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-        let k = 0; mt.tables.forEach(tb => { tb.teamSlots = [ids[k++] || null, ids[k++] || null]; });
+        let k = 0;
+        mt.tables.forEach(tb => { tb.teamSlots = [ids[k++] || null, ids[k++] || null]; });
+        mt.tables.forEach(tb => { for (let side = 0; side < 2; side++) fillSideFromTeam(mt, tb, side, tb.teamSlots[side]); });
         save();
       } else if (state.mode === "doubleup") {
         const ids = (state.pairs || []).map(p => p.id);
         for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-        let k = 0; mt.tables.forEach(tb => { tb.pairSlots = [ids[k++] || null, ids[k++] || null, ids[k++] || null, ids[k++] || null]; });
+        let k = 0;
+        mt.tables.forEach(tb => { tb.pairSlots = [ids[k++] || null, ids[k++] || null, ids[k++] || null, ids[k++] || null]; });
+        mt.tables.forEach(tb => { for (let g = 0; g < 4; g++) fillGroupFromPair(mt, tb, g, tb.pairSlots[g]); });
         save();
       }
     }
@@ -534,7 +614,8 @@
       setSettings, addPlayer, updatePlayer, removePlayer,
       assignSeat, clearSeat, setPlacement,
       clearMatchSeats, clearAllResults, resetBoard, importState,
-      setTeamName, setPairName, setMatchTeamSlot, setMatchPairSlot, shuffleMatchups,
+      setTeamName, setPairName, setTeamMember, setPairMember,
+      setMatchTeamSlot, setMatchPairSlot, applyRosterToMatch, shuffleMatchups,
       setPresent, setAllPresent, autoAssign,
       _persistNow: persist
     };

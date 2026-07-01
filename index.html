@@ -107,8 +107,8 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
 .addrow{display:flex;gap:8px;flex:1;min-width:240px}
 .addrow input{flex:1}
 .pool{display:flex;flex-wrap:wrap;gap:9px;min-height:44px}
-.chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-strong);color:var(--ink);
-  padding:7px 12px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:var(--shadow-soft);cursor:grab;user-select:none;transition:.14s}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:36px;line-height:1.2;background:var(--surface);border:1px solid var(--border-strong);color:var(--ink);
+  padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:var(--shadow-soft);cursor:grab;user-select:none;transition:.14s}
 .chip:hover{border-color:var(--pink)}
 .chip::before{content:"";width:9px;height:10px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
 .chip.has-av::before{display:none}
@@ -125,20 +125,22 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
 .chip .x{font-size:12px;color:var(--muted);width:17px;height:17px;display:grid;place-items:center;border-radius:50%;line-height:1}
 .chip .x:hover{color:#fff;background:var(--danger)}
 .chip.sel .x{color:rgba(255,255,255,.85)}
-.chip.has-check{padding-left:6px}
-.chip-check{appearance:none;-webkit-appearance:none;width:20px;height:20px;flex:none;border:2px solid var(--border-strong);border-radius:7px;
-  background:var(--surface);cursor:pointer;display:grid;place-items:center;transition:.14s;position:relative}
-.chip-check::after{content:"";width:6px;height:10px;border:solid transparent;border-width:0 2.5px 2.5px 0;
-  transform:rotate(45deg) translateY(-1px);transition:.14s}
+.chip.has-check{padding-left:8px}
+.chip-check{appearance:none;-webkit-appearance:none;-moz-appearance:none;margin:0;flex:none;
+  width:20px;height:20px;min-width:20px;border:2px solid var(--border-strong);border-radius:6px;
+  background:var(--surface);cursor:pointer;transition:border-color .14s,background-color .14s;
+  vertical-align:middle;position:relative;top:0}
 .chip-check:hover{border-color:var(--cyan)}
-.chip-check:checked{background:var(--grad);border-color:transparent}
-.chip-check:checked::after{border-color:#fff}
+.chip-check:checked{border-color:transparent;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 6.5'/%3E%3C/svg%3E"),var(--grad);
+  background-repeat:no-repeat,no-repeat;background-position:center,center;background-size:13px 13px,cover}
 .chip.has-check::before{display:none}
 .chip.absent{opacity:.62;background:var(--surface-2)}
 .chip.absent .nm{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--muted)}
-.chip.sel .chip-check{border-color:rgba(255,255,255,.8)}
-.chip.sel .chip-check:checked{background:rgba(255,255,255,.28)}
-.chip.sel .chip-check:checked::after{border-color:#fff}
+.chip.sel .chip-check{border-color:rgba(255,255,255,.85);background-color:transparent}
+.chip.sel .chip-check:checked{border-color:transparent;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 6.5'/%3E%3C/svg%3E"),linear-gradient(rgba(255,255,255,.32),rgba(255,255,255,.32));
+  background-repeat:no-repeat,no-repeat;background-position:center,center;background-size:13px 13px,cover}
 .pool-empty{color:var(--muted);font-size:13px}
 
 /* ---------- match selector ---------- */
@@ -147,6 +149,8 @@ input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 
   background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:13.5px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
 .mtab:hover{border-color:var(--border-strong);color:var(--ink)}
 .mtab.on{background:var(--grad);color:#fff;border-color:transparent}
+.mtab-roster{border-color:color-mix(in srgb,var(--cyan) 45%,var(--border));color:var(--cyan-deep)}
+.mtab-roster.on{background:linear-gradient(135deg,var(--cyan),var(--pink));color:#fff;border-color:transparent}
 
 /* ---------- 参加者＋自動組卓バー ---------- */
 .assignbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:0}
@@ -307,7 +311,7 @@ section[id^="view-"]{animation:rise .4s both}
           <button class="btn grad" id="addBtn">追加</button>
         </div>
       </div>
-      <div class="hint" style="margin-bottom:10px">各POPの<b>チェック</b>でこの試合の参加者を切替（既定＝全員参加）。チップをタップ → 席をタップで配置（PCはドラッグも可）。<b>チーム戦／ダブルアップ</b>は各枠上部の <b>▼</b> でこの試合の対戦チームを選べます（試合ごとに変更可）。</div>
+      <div class="hint" style="margin-bottom:10px">各POPの<b>チェック</b>でこの試合の参加者を切替（既定＝全員参加）。チップをタップ → 席をタップで配置（PCはドラッグも可）。<b>チーム戦／ダブルアップ</b>は <b>🧩 チーム組</b> タブでチーム名と既定メンバーを設定 → 各試合は枠上部の <b>▼</b> でチームを選ぶとその編成を引き継ぎます（試合ごとに入替も可）。</div>
       <div class="pool" id="pool"></div>
     </div>
 
@@ -342,7 +346,7 @@ section[id^="view-"]{animation:rise .4s both}
 <script>
 (function(){
   const C=window.TFTCore, store=C.makeStore();
-  let curTab="setup", curMatch=0, curResMatch="overall", selectedChip=null;
+  let curTab="setup", curMatch=0, curResMatch="overall", selectedChip=null, rosterTab=false;
   const $=s=>document.querySelector(s);
   const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;};
   function avImg(url,cls){if(!url)return null;const im=el("img","av"+(cls?" "+cls:""));im.src=url;im.alt="";im.loading="lazy";im.onerror=()=>im.remove();return im;}
@@ -421,9 +425,12 @@ section[id^="view-"]{animation:rise .4s both}
     document.querySelectorAll(".mode").forEach(m=>m.classList.toggle("on",m.dataset.mode===s.mode));
     $("#modeHint").textContent=modeHint(s.mode);
     if(curMatch>=s.matchCount)curMatch=s.matchCount-1;
+    if(s.mode==="solo")rosterTab=false; // 個人戦にチーム組は無い
     if(curTab==="setup"){
       renderPool(s);
-      renderMatchSel(s);renderAssignBar(s);renderTables(s);
+      renderMatchSel(s);
+      if(rosterTab && s.mode!=="solo"){ renderRosterBar(s); renderRosterEditor(s); }
+      else { renderAssignBar(s); renderTables(s); }
     }
     else renderResults(s);
   }
@@ -436,17 +443,25 @@ section[id^="view-"]{animation:rise .4s both}
   function renderPool(s){
     const pool=$("#pool");pool.innerHTML="";
     if(!s.roster.length){pool.appendChild(el("div","pool-empty","名前を追加するとここにPOPが出ます"));return;}
+    const roster=rosterTab&&s.mode!=="solo";
     const placed=new Set();
-    s.matches[curMatch]?.tables.forEach(tb=>tb.seats.forEach(id=>id&&placed.add(id)));
+    if(roster){
+      const src=s.mode==="team"?(s.teams||[]):(s.pairs||[]);
+      src.forEach(g=>(g.members||[]).forEach(id=>id&&placed.add(id)));
+    }else{
+      s.matches[curMatch]?.tables.forEach(tb=>tb.seats.forEach(id=>id&&placed.add(id)));
+    }
     s.roster.forEach(p=>{
-      const present=C.isPresent(s,curMatch,p.id);
-      const c=el("div","chip has-check"+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":"")+(!present?" absent":""));
+      const present=roster?true:C.isPresent(s,curMatch,p.id);
+      const c=el("div","chip"+(roster?"":" has-check")+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":"")+(!present?" absent":""));
       c.draggable=true;c.dataset.pid=p.id;
-      const chk=el("input","chip-check");chk.type="checkbox";chk.checked=present;
-      chk.title="この試合に参加";
-      chk.onclick=ev=>ev.stopPropagation();
-      chk.onchange=ev=>{ev.stopPropagation();store.setPresent(curMatch,p.id,chk.checked);};
-      c.appendChild(chk);
+      if(!roster){
+        const chk=el("input","chip-check");chk.type="checkbox";chk.checked=present;
+        chk.title="この試合に参加";
+        chk.onclick=ev=>ev.stopPropagation();
+        chk.onchange=ev=>{ev.stopPropagation();store.setPresent(curMatch,p.id,chk.checked);};
+        c.appendChild(chk);
+      }
       if(p.discordAvatar){const im=avImg(p.discordAvatar,"");if(im){im.className="chip-av";c.classList.add("has-av");c.appendChild(im);}}
       c.appendChild(el("span","nm",p.name));
       const x=el("span","x","×");
@@ -461,9 +476,15 @@ section[id^="view-"]{animation:rise .4s both}
 
   function renderMatchSel(s){
     const w=$("#matchSel");w.innerHTML="";
+    if(s.mode!=="solo"){
+      const rb=el("button","mtab mtab-roster"+(rosterTab?" on":""),"🧩 チーム組");
+      rb.title="各チームの名前と既定メンバーを設定（本番で卓にチームを選ぶと引き継がれます）";
+      rb.onclick=()=>{rosterTab=true;selectedChip=null;render(s);};
+      w.appendChild(rb);
+    }
     for(let m=0;m<s.matchCount;m++){
-      const b=el("button","mtab"+(m===curMatch?" on":""),"第"+(m+1)+"試合");
-      b.onclick=()=>{curMatch=m;render(s);};w.appendChild(b);
+      const b=el("button","mtab"+(!rosterTab&&m===curMatch?" on":""),"第"+(m+1)+"試合");
+      b.onclick=()=>{rosterTab=false;curMatch=m;render(s);};w.appendChild(b);
     }
   }
 
@@ -491,12 +512,18 @@ section[id^="view-"]{animation:rise .4s both}
     clr.onclick=()=>{if(confirm(`第${curMatch+1}試合の配置をクリアしますか？`))store.clearMatchSeats(curMatch);};
     acts.append(allOn,allOff,rnd,pts,clr);
 
-    // チーム戦/ダブルアップ：対戦カードのシャッフル
+    // チーム戦/ダブルアップ：チーム組の反映＋対戦カードのシャッフル
     if(s.mode!=="solo"){
+      const refl=el("button","btn sm","🧩 チーム組を反映");
+      refl.title="この試合の各卓に、割り当たっているチームの既定メンバー（チーム組）を流し込みます";
+      refl.onclick=()=>{
+        if(s.matches[curMatch].tables.some(tb=>tb.seats.some(Boolean))&&!confirm(`第${curMatch+1}試合の配置を、チーム組の既定編成で上書きしますか？`))return;
+        store.applyRosterToMatch(curMatch);toast("チーム組の編成を反映しました");
+      };
       const shuf=el("button","btn sm","🔀 対戦カードをシャッフル");
-      shuf.title="この試合の各卓に座るチームをランダムに組み替えます（メンバー配置はそのまま）";
+      shuf.title="この試合の各卓に座るチームをランダムに組み替えます（既定メンバーも引き継ぎます）";
       shuf.onclick=()=>{store.shuffleMatchups(curMatch);toast("この試合の対戦カードを組み替えました");};
-      acts.appendChild(shuf);
+      acts.append(refl,shuf);
     }
     panel.appendChild(acts);
     bar.appendChild(panel);
@@ -511,6 +538,70 @@ section[id^="view-"]{animation:rise .4s both}
     if(!r){toast("自動組卓に失敗しました");return;}
     if(r.dropped>0)toast(`${r.assigned}名を配置（満員のため${r.dropped}名は未配置・卓数を増やしてください）`);
     else toast(`${r.assigned}名を${method==="points"?"pt近い順":"ランダム"}で配置しました`);
+  }
+
+  /* ======== 「チーム組」タブ：チーム名＋既定メンバーの編集 ======== */
+  function renderRosterBar(s){
+    const bar=$("#assignBar");bar.innerHTML="";
+    const panel=el("div","panel assignbar");
+    const info=el("div","assign-info");
+    const cnt=(s.mode==="team")?(s.teams||[]).length:(s.pairs||[]).length;
+    const size=(s.mode==="team")?4:2;
+    info.innerHTML=`<span class="assign-h">🧩 チーム組</span><b class="num">${cnt}</b>チーム（各${size}名）を編成。<span class="muted" style="font-size:12px">本番は各試合で卓のチームを選ぶと、この編成が引き継がれます（試合ごとに入替も可）</span>`;
+    panel.appendChild(info);
+    const acts=el("div","assign-acts");
+    const goMatch=el("button","btn grad sm","第1試合へ →");
+    goMatch.onclick=()=>{rosterTab=false;curMatch=0;render(s);};
+    acts.appendChild(goMatch);
+    panel.appendChild(acts);
+    bar.appendChild(panel);
+  }
+
+  function renderRosterEditor(s){
+    const wrap=$("#tables");wrap.innerHTML="";
+    const isTeam=s.mode==="team";
+    const list=isTeam?(s.teams||[]):(s.pairs||[]);
+    const size=isTeam?4:2;
+    list.forEach((g,i)=>{
+      const tableIdx=isTeam?Math.floor(i/2):Math.floor(i/4);
+      const card=el("div","table");
+      const h=el("div","table-h");
+      h.appendChild(el("span","thx",String(i+1)));
+      const nameInp=el("input");nameInp.value=g.name;
+      nameInp.style.cssText="font:inherit;font-weight:800;font-size:15px;border:none;background:transparent;flex:1;min-width:0;padding:0;color:inherit";
+      nameInp.title="チーム名";
+      nameInp.onchange=()=>{ isTeam?store.setTeamName(g.id,nameInp.value):store.setPairName(g.id,nameInp.value); };
+      h.appendChild(nameInp);
+      h.appendChild(el("span","cnt","既定卓"+(tableIdx+1)));
+      card.appendChild(h);
+      const grp=el("div","grp");
+      const seats=el("div","seats");
+      for(let k=0;k<size;k++)seats.appendChild(makeRosterSeat(s,isTeam,g,k));
+      grp.appendChild(seats);card.appendChild(grp);
+      wrap.appendChild(card);
+    });
+  }
+
+  // チーム組の1席（既定メンバー編集用）
+  function makeRosterSeat(s,isTeam,g,k){
+    const pid=(g.members||[])[k]||null;
+    const set=(playerId)=> isTeam?store.setTeamMember(g.id,k,playerId):store.setPairMember(g.id,k,playerId);
+    const seat=el("div","seat "+(pid?"filled":"empty"));seat.dataset.seat=k;
+    seat.appendChild(el("span","sn",String(k+1)));
+    if(pid){const a=avImg(C.avatarOf(s,pid),"sm");if(a)seat.appendChild(a);}
+    seat.appendChild(el("span","nm",pid?C.nameOf(s,pid):"空き"));
+    if(pid){const rm=el("span","rm","×");rm.onclick=e=>{e.stopPropagation();set(null);};seat.appendChild(rm);}
+    seat.onclick=()=>{
+      if(selectedChip){set(selectedChip);selectedChip=null;}
+      else if(pid){selectedChip=pid;renderPool(s);}
+    };
+    seat.addEventListener("dragover",e=>{e.preventDefault();seat.classList.add("over");});
+    seat.addEventListener("dragleave",()=>seat.classList.remove("over"));
+    seat.addEventListener("drop",e=>{e.preventDefault();seat.classList.remove("over");
+      let d;try{d=JSON.parse(e.dataTransfer.getData("text/plain"));}catch(_){return;}
+      if(d&&d.pid)set(d.pid);});
+    if(pid){seat.draggable=true;seat.addEventListener("dragstart",e=>e.dataTransfer.setData("text/plain",JSON.stringify({pid,from:"roster"})));}
+    return seat;
   }
 
   function renderTables(s){
