@@ -285,12 +285,16 @@
         if (!Array.isArray(s.matches[m].tables)) s.matches[m].tables = [];
         for (let t = 0; t < s.tableCount; t++) {
           let tb = s.matches[m].tables[t];
+          let hadTeamSlots = false, hadPairSlots = false; // 生データにスロットがあったか（=新フォーマット判定）
           if (!tb) {
             tb = emptyTable();
             tb.teamSlots = defaultTeamSlots(s.teams, t);
             tb.pairSlots = defaultPairSlots(s.pairs, t);
             s.matches[m].tables[t] = tb;
+            hadTeamSlots = hadPairSlots = true; // 新規生成は新フォーマット扱い（復元しない）
           } else {
+            hadTeamSlots = Array.isArray(tb.teamSlots);
+            hadPairSlots = Array.isArray(tb.pairSlots);
             if (!Array.isArray(tb.seats)) tb.seats = new Array(SEATS_PER_TABLE).fill(null);
             while (tb.seats.length < SEATS_PER_TABLE) tb.seats.push(null);
             tb.seats.length = SEATS_PER_TABLE;
@@ -298,13 +302,13 @@
             tb.teamSlots = normSlots(tb.teamSlots, 2, s.teams, defaultTeamSlots(s.teams, t));
             tb.pairSlots = normSlots(tb.pairSlots, 4, s.pairs, defaultPairSlots(s.pairs, t));
           }
-          // 旧モデル移行：席が空なら旧membersから復元（team i→卓floor(i/2)側i%2 / pair i→卓floor(i/4)組i%4）
-          if (teamHadMembers && tb.seats.every(x => !x)) {
+          // 旧モデル（スロットを持たない v1 データ）だけを席へ移行。新フォーマットの空席は空のまま維持する。
+          if (teamHadMembers && !hadTeamSlots && tb.seats.every(x => !x)) {
             const tA = oldTeams[t * 2], tB = oldTeams[t * 2 + 1];
             if (tA && Array.isArray(tA.members)) for (let k = 0; k < 4; k++) tb.seats[k] = tA.members[k] || null;
             if (tB && Array.isArray(tB.members)) for (let k = 0; k < 4; k++) tb.seats[4 + k] = tB.members[k] || null;
           }
-          if (pairHadMembers && tb.seats.every(x => !x)) {
+          if (pairHadMembers && !hadPairSlots && tb.seats.every(x => !x)) {
             for (let g = 0; g < 4; g++) {
               const pr = oldPairs[t * 4 + g];
               if (pr && Array.isArray(pr.members)) { tb.seats[g * 2] = pr.members[0] || null; tb.seats[g * 2 + 1] = pr.members[1] || null; }
@@ -560,6 +564,29 @@
       save();
     }
 
+    // 「チーム組」の既定編成プール（team/doubleupのみ）を返す
+    function rosterPool() { return state.mode === "team" ? state.teams : state.mode === "doubleup" ? state.pairs : null; }
+    function rosterSize() { return state.mode === "team" ? 4 : 2; }
+    // チーム組：全チームの既定メンバーをクリア
+    function clearRosterTeams() {
+      const pool = rosterPool(); if (!pool) return;
+      const size = rosterSize();
+      pool.forEach(g => { g.members = new Array(size).fill(null); });
+      save();
+    }
+    // チーム組：ロスターの選手をシャッフルして各チームの既定メンバーへ順に割当（先頭のチームから詰める）
+    function shuffleRosterTeams() {
+      const pool = rosterPool(); if (!pool) return;
+      const size = rosterSize();
+      pool.forEach(g => { g.members = new Array(size).fill(null); });
+      let ids = state.roster.map(p => p.id);
+      for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+      let idx = 0;
+      for (let g = 0; g < pool.length && idx < ids.length; g++) {
+        for (let k = 0; k < size && idx < ids.length; k++) pool[g].members[k] = ids[idx++];
+      }
+      save();
+    }
     // 試合mt内の全席からpidを外す（重複防止）。順位も破棄。
     function dedupInMatch(mt, pid) {
       mt.tables.forEach(t => { const i = t.seats.indexOf(pid); if (i >= 0) { t.seats[i] = null; delete t.placements[pid]; } });
@@ -741,6 +768,7 @@
       assignSeat, clearSeat, setPlacement,
       clearMatchSeats, clearAllResults, resetBoard, importState,
       setTeamName, setPairName, setTeamMember, setPairMember,
+      clearRosterTeams, shuffleRosterTeams,
       setMatchTeamSlot, setMatchPairSlot, applyRosterToMatch, shuffleMatchups,
       setPresent, setAllPresent, autoAssign,
       listBoards, setBoardTitle, renameBoard, forgetBoard, loadBoardState,

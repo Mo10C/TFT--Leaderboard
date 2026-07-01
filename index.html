@@ -550,9 +550,20 @@ section[id^="view-"]{animation:rise .4s both}
     info.innerHTML=`<span class="assign-h">🧩 チーム組</span><b class="num">${cnt}</b>チーム（各${size}名）を編成。<span class="muted" style="font-size:12px">本番は各試合で卓のチームを選ぶと、この編成が引き継がれます（試合ごとに入替も可）</span>`;
     panel.appendChild(info);
     const acts=el("div","assign-acts");
-    const goMatch=el("button","btn grad sm","第1試合へ →");
+    const list=(s.mode==="team")?(s.teams||[]):(s.pairs||[]);
+    const rnd=el("button","btn grad sm","🎲 ランダムでチーム分け");
+    rnd.title="ロスターの選手をシャッフルして各チームの既定メンバーへ割り当てます";
+    rnd.onclick=()=>{
+      if(!s.roster.length){toast("選手がいません（先にPOPを追加）");return;}
+      if(list.some(g=>(g.members||[]).some(Boolean))&&!confirm("現在のチーム編成を破棄して、ランダムに組み直しますか？"))return;
+      store.shuffleRosterTeams();toast("ランダムでチーム分けしました");
+    };
+    const clr=el("button","btn sm","全クリア");
+    clr.title="すべてのチームの既定メンバーを空にします";
+    clr.onclick=()=>{ if(confirm("すべてのチームの既定メンバーをクリアしますか？"))store.clearRosterTeams(); };
+    const goMatch=el("button","btn sm","第1試合へ →");
     goMatch.onclick=()=>{rosterTab=false;curMatch=0;render(s);};
-    acts.appendChild(goMatch);
+    acts.append(rnd,clr,goMatch);
     panel.appendChild(acts);
     bar.appendChild(panel);
   }
