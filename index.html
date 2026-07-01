@@ -370,7 +370,7 @@ section[id^="view-"]{animation:rise .4s both}
     else{b.className="badge local";b.textContent="● ローカル保存のみ";}
     $("#boardIdLabel").textContent=boardId;
     $("#editorLink").href="editor.html"+location.search;
-    $("#apiHint").textContent=C.Riot.enabled()?"":"※ Worker URL未設定のため手入力のみ（config.js）";
+    $("#apiHint").textContent=C.Riot.enabled()?"":"※ Worker URL未設定のため手入力のみ（管理コンソールのRiot API設定で登録できます）";
     render(store.state);
   });
 
@@ -401,7 +401,7 @@ section[id^="view-"]{animation:rise .4s both}
 
   /* ---- fetch ---- */
   $("#fetchAllBtn").onclick=async()=>{
-    if(!C.Riot.enabled()){toast("config.js に Worker URL を設定してください");return;}
+    if(!C.Riot.enabled()){toast("Worker URL未設定：管理コンソールのRiot API設定で登録してください");return;}
     const s=store.state,mi=(curResMatch==="overall")?null:+curResMatch;
     const targets=(mi==null)?s.matches.map((_,i)=>i):[mi];
     for(const m of targets)for(let t=0;t<s.tableCount;t++)await fetchTable(m,t);

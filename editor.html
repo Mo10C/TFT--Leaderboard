@@ -198,8 +198,26 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
 
   <!-- Riot API -->
   <section class="card">
-    <h2>Riot API</h2>
+    <h2>Riot API 設定</h2>
     <p class="desc" id="apiDesc"></p>
+    <div class="row" style="margin-bottom:12px">
+      <div class="field" style="flex:1;min-width:260px"><label>Worker URL（Riot中継）</label>
+        <input id="workerUrl" placeholder="例: https://tft-riot-proxy.xxxx.workers.dev"></div>
+      <div class="field" style="min-width:140px"><label>リージョン</label>
+        <select id="region">
+          <option value="asia">asia</option>
+          <option value="americas">americas</option>
+          <option value="europe">europe</option>
+          <option value="sea">sea</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn grad" id="saveApiBtn">保存して反映</button>
+      <button class="btn" id="resetApiBtn">config.js の値に戻す</button>
+      <span class="muted" id="apiSaveStatus"></span>
+    </div>
+    <p class="desc" style="margin-bottom:12px">保存内容はこのブラウザに記録され、本番ボードにも即反映されます（config.js の再デプロイ不要）。Discordアイコン取得も同じ Worker を使います。<br>※ Riot APIキーは Worker 側（Cloudflareのシークレット）で管理します。ここには入力しません。</p>
     <div class="row">
       <button class="btn" id="testBtn">接続テスト</button>
       <button class="btn grad" id="fetchAllBtn">全試合・全卓を自動取得</button>
@@ -269,12 +287,38 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     else{b.className="badge local";b.textContent="● ローカル保存のみ";}
     $("#curBoard").textContent=boardId;
     $("#boardLink").href="index.html"+location.search;
-    const cfg=window.TFT_CONFIG||{};
-    $("#apiDesc").innerHTML=C.Riot.enabled()
-      ? `Worker: <code>${cfg.workerUrl}</code> ／ region: <b>${cfg.region||"asia"}</b>`
-      : `<b style="color:var(--gold)">Worker URL 未設定</b>：config.js に設定すると自動取得が有効になります。`;
+    refreshApiPanel();
     render(store.state);
   });
+
+  // Riot API 設定パネルの表示更新（有効設定・上書き状態を反映）
+  function refreshApiPanel(){
+    const eff=C.RiotConfig.effective(), base=C.RiotConfig.base(), overridden=C.RiotConfig.isOverridden();
+    $("#workerUrl").value=eff.workerUrl||"";
+    $("#region").value=eff.region||"asia";
+    const src = overridden
+      ? `<b style="color:var(--cyan-deep)">この管理コンソールで上書き中</b>（config.js: <code>${base.workerUrl||"未設定"}</code>）`
+      : (base.workerUrl ? `config.js の設定を使用中` : `<b style="color:var(--gold)">未設定</b>`);
+    $("#apiDesc").innerHTML = C.Riot.enabled()
+      ? `現在の接続先: <code>${eff.workerUrl}</code> ／ region: <b>${eff.region}</b><br>${src}`
+      : `<b style="color:var(--gold)">Worker URL 未設定</b>：下の欄に入力して保存すると自動取得・Discordアイコン取得が有効になります。`;
+  }
+
+  $("#saveApiBtn").onclick=()=>{
+    const url=$("#workerUrl").value.trim(), region=$("#region").value;
+    if(url && !/^https?:\/\//i.test(url)){toast("Worker URL は http(s):// から始めてください");return;}
+    C.RiotConfig.set({workerUrl:url, region});
+    $("#apiSaveStatus").textContent="保存しました";
+    refreshApiPanel();
+    toast("Riot API 設定を保存しました（本番ボードにも反映）");
+  };
+  $("#resetApiBtn").onclick=()=>{
+    if(!confirm("この管理コンソールでの上書きを消して、config.js の値に戻します。よろしいですか？"))return;
+    C.RiotConfig.clear();
+    $("#apiSaveStatus").textContent="config.js の値に戻しました";
+    refreshApiPanel();
+    toast("config.js の設定に戻しました");
+  };
 
   $("#mode").addEventListener("change",e=>{
     if(e.target.value===store.state.mode)return;
@@ -294,7 +338,7 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
   };
 
   $("#testBtn").onclick=async()=>{
-    if(!C.Riot.enabled()){toast("Worker URL を config.js に設定してください");return;}
+    if(!C.Riot.enabled()){toast("Worker URL を上のRiot API設定で保存してください");return;}
     const withId=store.state.roster.find(p=>p.riotId&&p.riotId.includes("#"));
     if(!withId){toast("テスト用にRiot ID登録済みの選手が必要です");return;}
     $("#apiStatus").textContent="テスト中…";
@@ -302,7 +346,7 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     catch(e){$("#apiStatus").textContent="失敗: "+e.message;toast("接続失敗");}
   };
   $("#fetchAllBtn").onclick=async()=>{
-    if(!C.Riot.enabled()){toast("Worker URL 未設定");return;}
+    if(!C.Riot.enabled()){toast("Worker URL 未設定（上のRiot API設定で保存してください）");return;}
     const s=store.state;
     for(let m=0;m<s.matchCount;m++)for(let t=0;t<s.tableCount;t++){
       const tb=s.matches[m].tables[t];
@@ -316,7 +360,7 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
 
   // 全員のRiot ID実在チェック（押した時だけ・結果は保存しない）
   $("#checkAllBtn").onclick=async()=>{
-    if(!C.Riot.enabled()){toast("Worker URL が未設定です（config.js）");return;}
+    if(!C.Riot.enabled()){toast("Worker URL が未設定です（上のRiot API設定で保存してください）");return;}
     const targets=store.state.roster.filter(p=>p.riotId&&p.riotId.includes("#"));
     if(!targets.length){toast("Riot ID登録済みの選手がいません");return;}
     targets.forEach(p=>checkState[p.id]="checking");
@@ -349,7 +393,7 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
 
   // 全員のDiscordアイコンを取得して保存（押した時だけ）
   $("#avatarAllBtn").onclick=async()=>{
-    if(!C.Discord.enabled()){toast("Worker URL が未設定です（config.js）");return;}
+    if(!C.Discord.enabled()){toast("Worker URL が未設定です（上のRiot API設定で保存してください）");return;}
     const targets=store.state.roster.filter(p=>p.discordId&&p.discordId.trim());
     if(!targets.length){toast("Discord ID登録済みの選手がいません");return;}
     let ok=0,ng=0;

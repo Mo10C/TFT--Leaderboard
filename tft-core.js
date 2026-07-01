@@ -17,6 +17,40 @@
   const CFG = window.TFT_CONFIG || {};
   const SEATS_PER_TABLE = 8;
 
+  /* ---------- Riot/Worker 接続設定（config.js を localStorage 上書きできる）----------
+     editor.html から Worker URL / region を書き換え可能。保存はブラウザ内（同一オリジンで
+     index.html と共有）。未設定なら config.js の値を使う。 */
+  const RIOT_CFG_KEY = "tft-riot-config";
+  function readOverride() {
+    try { const raw = localStorage.getItem(RIOT_CFG_KEY); return raw ? (JSON.parse(raw) || {}) : {}; }
+    catch (e) { return {}; }
+  }
+  // 有効な接続設定（上書き > config.js > 既定）
+  function effCfg() {
+    const o = readOverride();
+    return {
+      workerUrl: (o.workerUrl != null && o.workerUrl !== "") ? String(o.workerUrl).trim() : (CFG.workerUrl || ""),
+      region: (o.region != null && o.region !== "") ? String(o.region).trim() : (CFG.region || "asia")
+    };
+  }
+  const RiotConfig = {
+    // 実際に使われる設定
+    effective() { return effCfg(); },
+    // config.js の元設定（上書き前）
+    base() { return { workerUrl: CFG.workerUrl || "", region: CFG.region || "asia" }; },
+    // 現在の上書き内容（あれば）
+    override() { return readOverride(); },
+    isOverridden() { const o = readOverride(); return !!((o.workerUrl && o.workerUrl !== (CFG.workerUrl || "")) || (o.region && o.region !== (CFG.region || "asia"))); },
+    set(patch) {
+      const o = readOverride();
+      if (patch && ("workerUrl" in patch)) o.workerUrl = (patch.workerUrl || "").trim();
+      if (patch && ("region" in patch)) o.region = (patch.region || "").trim();
+      try { localStorage.setItem(RIOT_CFG_KEY, JSON.stringify(o)); } catch (e) { }
+      return effCfg();
+    },
+    clear() { try { localStorage.removeItem(RIOT_CFG_KEY); } catch (e) { } return effCfg(); }
+  };
+
   /* ---------- モード定義 ---------- */
   const MODES = {
     solo:     { label: "個人戦",          groupSize: 1, groups: 8 },
@@ -777,13 +811,14 @@
      Riot API（Worker 経由）
      ============================================================= */
   const Riot = {
-    enabled() { return !!(CFG.workerUrl); },
+    enabled() { return !!effCfg().workerUrl; },
 
     async _get(path, params) {
-      if (!CFG.workerUrl) throw new Error("Worker URL が未設定です（config.js）");
-      const u = new URL(CFG.workerUrl.replace(/\/$/, "") + path);
+      const cfg = effCfg();
+      if (!cfg.workerUrl) throw new Error("Worker URL が未設定です（管理コンソールのRiot API設定 または config.js）");
+      const u = new URL(cfg.workerUrl.replace(/\/$/, "") + path);
       Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
-      u.searchParams.set("region", CFG.region || "asia");
+      u.searchParams.set("region", cfg.region || "asia");
       const res = await fetch(u.toString());
       if (!res.ok) {
         const t = await res.text().catch(() => "");
@@ -858,10 +893,11 @@
      Discord（Worker経由でアバターURLを解決）
      ============================================================= */
   const Discord = {
-    enabled() { return !!CFG.workerUrl; },
+    enabled() { return !!effCfg().workerUrl; },
     async avatar(userId) {
-      if (!CFG.workerUrl) throw new Error("Worker URL が未設定です（config.js）");
-      const u = new URL(CFG.workerUrl.replace(/\/$/, "") + "/avatar");
+      const cfg = effCfg();
+      if (!cfg.workerUrl) throw new Error("Worker URL が未設定です（管理コンソールのRiot API設定 または config.js）");
+      const u = new URL(cfg.workerUrl.replace(/\/$/, "") + "/avatar");
       u.searchParams.set("userId", String(userId).trim());
       const res = await fetch(u.toString());
       if (!res.ok) {
@@ -879,6 +915,6 @@
     playerById, nameOf, avatarOf, teamById, pairById, teamName, pairName,
     isPresent, presentList,
     tableStandings, overallStandings, teamOverall, pairOverall,
-    Riot, Discord
+    Riot, Discord, RiotConfig
   };
 })();
