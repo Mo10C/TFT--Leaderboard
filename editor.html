@@ -394,51 +394,25 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
     renderTeams(s);renderRoster(s);renderMatchSel(s);renderManual(s);
   }
 
-  // チーム名/メンバー（4v4=卓数×2）/ ペア名（ダブルアップ=4）の編集
+  // チーム名 / ペア(=2人チーム)名の編集（プール・IDで指定）。メンバーと対戦は本番ボードで試合ごとに設定。
   function renderTeams(s){
     const card=$("#teamCard"),row=$("#teamNameRow"),desc=$("#teamDesc");
     row.innerHTML="";
     if(s.mode==="solo"){card.classList.add("hidden");return;}
     card.classList.remove("hidden");
-    if(s.mode==="team"){
-      const teamCount=s.tableCount*2;
-      desc.textContent="4人×"+teamCount+"チーム（卓数×2）。チーム内メンバーの合計ptで全体順位を競います。先にチームを編成してください。";
-      for(let i=0;i<teamCount;i++){
-        const tableIdx=Math.floor(i/2);
-        const wrap=el("div","field");wrap.style.cssText="min-width:220px;border:1px solid var(--border);border-radius:12px;padding:10px;gap:6px;display:flex;flex-direction:column";
-        wrap.appendChild(el("label","","卓"+(tableIdx+1)+" ・ チーム"+(i+1)));
-        const inp=el("input");inp.value=C.teamName(s,i);inp.onchange=()=>store.setTeamName(i,inp.value);
-        wrap.appendChild(inp);
-        const team=(s.teams&&s.teams[i])||{members:[]};
-        for(let k=0;k<4;k++){
-          const sel=el("select");
-          const optNone=el("option","","（空き）");optNone.value="";sel.appendChild(optNone);
-          s.roster.forEach(p=>{const o=el("option","",p.name);o.value=p.id;if(team.members[k]===p.id)o.selected=true;sel.appendChild(o);});
-          sel.onchange=()=>store.setTeamMember(i,k,sel.value||null);
-          wrap.appendChild(sel);
-        }
-        row.appendChild(wrap);
-      }
-    }else{ // doubleup
-      const pairCount=s.tableCount*4;
-      desc.textContent="2人×"+pairCount+"ペア（卓数×4）。1位8・2位6・3位4・4位2ptをペア両者に付与し、全体は通算ptで順位を競います。先にペアを編成してください。";
-      for(let i=0;i<pairCount;i++){
-        const tableIdx=Math.floor(i/4);
-        const wrap=el("div","field");wrap.style.cssText="min-width:200px;border:1px solid var(--border);border-radius:12px;padding:10px;gap:6px;display:flex;flex-direction:column";
-        wrap.appendChild(el("label","","卓"+(tableIdx+1)+" ・ ペア"+(i+1)));
-        const inp=el("input");inp.value=C.pairName(s,i);inp.onchange=()=>store.setPairName(i,inp.value);
-        wrap.appendChild(inp);
-        const pair=(s.pairs&&s.pairs[i])||{members:[]};
-        for(let k=0;k<2;k++){
-          const sel=el("select");
-          const optNone=el("option","","（空き）");optNone.value="";sel.appendChild(optNone);
-          s.roster.forEach(p=>{const o=el("option","",p.name);o.value=p.id;if(pair.members[k]===p.id)o.selected=true;sel.appendChild(o);});
-          sel.onchange=()=>store.setPairMember(i,k,sel.value||null);
-          wrap.appendChild(sel);
-        }
-        row.appendChild(wrap);
-      }
-    }
+    const isTeam=s.mode==="team";
+    const list=isTeam?(s.teams||[]):(s.pairs||[]);
+    desc.textContent=isTeam
+      ? "4v4のチーム名（"+list.length+"チーム）。メンバー配置と対戦カードは本番ボードで試合ごとに設定します。"
+      : "ダブルアップのチーム名（"+list.length+"チーム＝2人1組）。メンバー配置と対戦カードは本番ボードで試合ごとに設定します。";
+    list.forEach((g,i)=>{
+      const wrap=el("div","field");wrap.style.cssText="min-width:180px;border:1px solid var(--border);border-radius:12px;padding:10px;gap:6px;display:flex;flex-direction:column";
+      wrap.appendChild(el("label","","チーム"+(i+1)));
+      const inp=el("input");inp.value=g.name;
+      inp.onchange=()=>{ isTeam?store.setTeamName(g.id,inp.value):store.setPairName(g.id,inp.value); };
+      wrap.appendChild(inp);
+      row.appendChild(wrap);
+    });
   }
 
   function renderRoster(s){
@@ -480,18 +454,21 @@ th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:
       const tb=s.matches[curMatch].tables[t];
       const block=el("div","tblock");block.appendChild(el("h4","","卓 "+(t+1)));
       if(s.mode==="doubleup"){
+        const slots=tb.pairSlots||[];
         for(let g=0;g<4;g++){
           const a=tb.seats[g*2],b=tb.seats[g*2+1];if(!a&&!b)continue;
-          block.appendChild(el("div","grp-label",C.pairName(s,t*4+g)));
+          block.appendChild(el("div","grp-label",C.pairName(s,slots[g])));
           const names=[a,b].filter(Boolean).map(pid=>C.nameOf(s,pid)).join(" & ");
           block.appendChild(rankRow(names,tb.placements[a]||tb.placements[b]||"",4,v=>{[a,b].filter(Boolean).forEach(pid=>store.setPlacement(curMatch,t,pid,v));}));
         }
-      }else{
-        const ranges=s.mode==="team"?[[C.teamName(s,t*2),0,4],[C.teamName(s,t*2+1),4,8]]:[[null,0,8]];
-        ranges.forEach(([lbl,from,to])=>{
-          if(lbl)block.appendChild(el("div","grp-label",lbl));
-          for(let i=from;i<to;i++){const pid=tb.seats[i];if(!pid)continue;block.appendChild(rankRow(C.nameOf(s,pid),tb.placements[pid]||"",8,v=>store.setPlacement(curMatch,t,pid,v)));}
+      }else if(s.mode==="team"){
+        const slots=tb.teamSlots||[];
+        [[0,4],[4,8]].forEach((rng,side)=>{
+          block.appendChild(el("div","grp-label",C.teamName(s,slots[side])));
+          for(let i=rng[0];i<rng[1];i++){const pid=tb.seats[i];if(!pid)continue;block.appendChild(rankRow(C.nameOf(s,pid),tb.placements[pid]||"",8,v=>store.setPlacement(curMatch,t,pid,v)));}
         });
+      }else{
+        for(let i=0;i<8;i++){const pid=tb.seats[i];if(!pid)continue;block.appendChild(rankRow(C.nameOf(s,pid),tb.placements[pid]||"",8,v=>store.setPlacement(curMatch,t,pid,v)));}
       }
       if(!tb.seats.some(Boolean))block.appendChild(el("div","muted","選手未配置"));
       wrap.appendChild(block);
