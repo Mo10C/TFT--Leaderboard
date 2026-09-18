@@ -69,7 +69,7 @@ window.MCC_LB_CONFIG = {
 
      ⚠️ 3つとも空だと「セットアップ中」とみなして全員が管理者になります。 */
   admins: {
-    usernames: ["mo10c"],        // Discordのユーザー名（@は付けても付けなくてもOK）
+    usernames: ["mo10c","sensuishi_no13"],        // Discordのユーザー名（@は付けても付けなくてもOK）
     discordIds: [],              // DiscordのユーザーID（最も確実・推奨）
     riotIds: []                  // 空のままを推奨（誰でも打てる文字列のため）
   },
