@@ -3,882 +3,498 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>TFT リーダーボード ｜ マウンテンチョンク校</title>
-<meta name="description" content="TFT大会用リーダーボード presented by Mo10C/もと">
+<title>TFT リーダーボード ｜ 大会・スクリム用</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#7CA455">
+<meta name="description" content="TFT リーダーボードの使い方。Discord でログインすると自動で選手登録され、組卓と順位をみんなで共有できます。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ui.css?v=cup12">
 <style>
-:root{
-  --bg:#F3F2FA;--bg-2:#E9E7F6;--surface:#FFFFFF;--surface-2:#F7F6FD;
-  --border:#E7E3F3;--border-strong:#D8D3EC;--ink:#2C2A47;--muted:#807D9C;
-  --pink:#D94E97;--pink-deep:#B83C7E;--pink-soft:#F4B7D6;
-  --cyan:#1FA3B4;--cyan-deep:#188A99;--cyan-soft:#A6E1E8;--danger:#E25563;--gold:#E0A52E;
-  --grad:linear-gradient(135deg,var(--pink),var(--cyan));
-  --shadow:0 16px 36px -22px rgba(70,50,110,.35);--shadow-soft:0 8px 22px -14px rgba(70,50,110,.28);
-  --hexline:rgba(120,90,170,.16);
-}
-:root[data-theme="dark"]{
-  --bg:#16121F;--bg-2:#0F0C17;--surface:#1F1A2C;--surface-2:#272138;
-  --border:#352C49;--border-strong:#473A60;--ink:#EFEAF8;--muted:#9C95B4;
-  --pink:#F26DB0;--pink-deep:#F58CC2;--pink-soft:#7A3560;
-  --cyan:#4FD2DF;--cyan-deep:#7BE0E9;--cyan-soft:#1E5A64;--danger:#F2727F;--gold:#F2C661;
-  --grad:linear-gradient(135deg,var(--pink),var(--cyan));
-  --shadow:0 18px 40px -22px rgba(0,0,0,.7);--shadow-soft:0 10px 26px -16px rgba(0,0,0,.6);
-  --hexline:rgba(180,150,230,.14);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
-  background:radial-gradient(900px 480px at 88% -8%,color-mix(in srgb,var(--pink) 14%,transparent),transparent 60%),
-    radial-gradient(820px 460px at -8% 6%,color-mix(in srgb,var(--cyan) 13%,transparent),transparent 58%),var(--bg);
-  color:var(--ink);min-height:100vh;line-height:1.65;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
-.num{font-family:"Space Grotesk",sans-serif;font-variant-numeric:tabular-nums}
-button{font-family:inherit;cursor:pointer}
-.wrap{max-width:1180px;margin:0 auto;padding:clamp(18px,4vw,38px) clamp(16px,4vw,40px) 84px}
+/* ===== 入口（使い方 ＋ ログインへの導線）===== */
+.wrap{max-width:980px}
 
-/* ---------- hero ---------- */
-.hero{position:relative;border:1px solid var(--border);border-radius:26px;
-  background:radial-gradient(420px 220px at 92% 120%,color-mix(in srgb,var(--cyan) 12%,transparent),transparent 70%),
-    linear-gradient(150deg,color-mix(in srgb,var(--pink) 8%,var(--surface)),var(--surface));
-  padding:clamp(22px,3.4vw,34px) clamp(20px,3.4vw,38px);overflow:hidden;box-shadow:var(--shadow)}
-.hero::before{content:"";position:absolute;inset:0;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cpath d='M28 0L56 16v32L28 64 0 48V16z M28 64L56 80v32M28 64L0 80v32' fill='none' stroke='%23000' stroke-opacity='1' stroke-width='1'/%3E%3C/svg%3E");
-  background-size:56px 96px;color:var(--hexline);
-  -webkit-mask-image:linear-gradient(120deg,#000 0%,transparent 58%);mask-image:linear-gradient(120deg,#000 0%,transparent 58%);
-  opacity:.6;mix-blend-mode:luminosity}
-:root[data-theme="dark"] .hero::before{mix-blend-mode:screen;opacity:.5}
-.hero>*{position:relative;z-index:1}
-.hero-row{display:flex;align-items:flex-end;gap:clamp(14px,3vw,30px)}
-.hero-figure{position:relative;flex:none;align-self:flex-end}
-.hero-figure img{height:clamp(120px,18vw,190px);width:auto;display:block;filter:drop-shadow(0 14px 18px rgba(80,40,110,.22))}
-.bubble{position:absolute;top:-6px;left:70%;white-space:nowrap;background:var(--grad);color:#fff;font-weight:700;
-  font-size:12.5px;padding:7px 13px;border-radius:13px 13px 13px 3px;box-shadow:var(--shadow-soft)}
-.hero-text{flex:1;min-width:0}
-.logorow{display:flex;align-items:center;gap:13px;margin-bottom:4px}
-.logohex{width:46px;height:46px;flex:none;display:grid;place-items:center;background:var(--grad);color:#fff;font-size:20px;
-  clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);box-shadow:0 6px 16px -6px color-mix(in srgb,var(--pink) 60%,transparent)}
-.eyebrow{font-family:"Space Grotesk",sans-serif;letter-spacing:.3em;text-transform:uppercase;font-size:11px;color:var(--pink);font-weight:600}
-h1{font-size:clamp(23px,4.4vw,36px);font-weight:900;letter-spacing:-.01em;line-height:1.16;
-  background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.subtitle{color:var(--muted);margin-top:7px;font-size:clamp(13px,2.3vw,15px)}
-.themebtn{position:absolute;top:clamp(18px,3vw,26px);right:clamp(18px,3vw,26px);z-index:2;width:42px;height:42px;
-  border-radius:13px;background:var(--surface-2);border:1px solid var(--border);color:var(--ink);font-size:18px;cursor:pointer;
-  display:grid;place-items:center;transition:.16s;box-shadow:var(--shadow-soft)}
-.themebtn:hover{border-color:var(--pink);transform:translateY(-1px)}
+/* ---- ヒーロー ---- */
+.hero{position:relative;overflow:hidden;border-radius:28px;margin-bottom:26px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 19%,var(--surface)),var(--surface) 58%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 26%,var(--hairline)), var(--e3)}
+.hero::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;
+  border-radius:28px 28px 0 0;background:var(--edge);z-index:2}
+.hero::after{content:"";position:absolute;right:-90px;top:-120px;width:340px;height:340px;
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent) 20%,transparent),transparent 68%)}
+.hero-in{position:relative;z-index:1;padding:clamp(28px,5vw,44px) clamp(22px,4vw,44px)}
+.hero .eyebrow{margin-bottom:12px}
+.hero h2{font-size:clamp(24px,4.6vw,38px);font-weight:800;line-height:1.35;letter-spacing:-.025em}
+.hero h2 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:14px;color:var(--muted);line-height:2;margin-top:14px;max-width:600px}
+.hero p b{color:var(--ink);font-weight:700}
+.hero .cta{display:flex;gap:11px;flex-wrap:wrap;margin-top:24px}
 
-/* ---------- toolbar ---------- */
-.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:22px}
-.modeset{display:flex;gap:8px;flex-wrap:wrap}
-.mode{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;padding:9px 16px;border-radius:11px;cursor:pointer;
-  background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:14px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
-.mode:hover{border-color:var(--border-strong);color:var(--ink)}
-.mode.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--pink) 55%,transparent)}
-.spacer{flex:1}
-.badge{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:600;letter-spacing:.04em;padding:6px 11px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--surface)}
-.badge.live{border-color:color-mix(in srgb,var(--cyan) 45%,transparent);color:var(--cyan-deep);background:color-mix(in srgb,var(--cyan) 10%,transparent)}
-.badge.local{border-color:color-mix(in srgb,var(--gold) 50%,transparent);color:var(--gold);background:color-mix(in srgb,var(--gold) 12%,transparent)}
-.linkbtn{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;font-size:13px;font-weight:600;color:var(--muted);
-  padding:8px 13px;border-radius:11px;border:1px solid var(--border);background:var(--surface);transition:.16s;box-shadow:var(--shadow-soft)}
-.linkbtn:hover{border-color:var(--pink);color:var(--pink)}
+/* ---- 章 ---- */
+.chap{margin-top:40px}
+.chap > h3{display:flex;align-items:center;gap:12px;font-size:19px;font-weight:800;
+  letter-spacing:-.015em;margin-bottom:7px}
+.chap > h3 .n{width:28px;height:28px;border-radius:9px;flex:none;display:grid;place-items:center;
+  font-family:"Space Grotesk",sans-serif;font-size:13px;font-weight:700;color:#fff;background:var(--grad);
+  box-shadow:0 5px 12px -7px color-mix(in srgb,var(--accent-deep) 80%,transparent)}
+.chap > .cl{font-size:13px;color:var(--muted);line-height:1.9;margin:0 0 18px 40px}
+.chap > .cl b{color:var(--ink);font-weight:700}
 
-/* ---------- panels ---------- */
-.panel{margin-top:18px;border:1px solid var(--border);border-radius:20px;background:var(--surface);box-shadow:var(--shadow-soft);padding:clamp(14px,2.4vw,20px)}
-.settings{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end}
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font-family:"Space Grotesk",sans-serif;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
-input,select{background:var(--surface);border:1px solid var(--border);border-radius:11px;color:var(--ink);font-family:inherit;font-size:14px;padding:10px 12px}
-input:focus,select:focus{outline:none;border-color:var(--pink);box-shadow:0 0 0 3px color-mix(in srgb,var(--pink) 18%,transparent)}
-.field input[type=number]{width:96px}
-.hint{color:var(--muted);font-size:13px}
+/* ---- 手順 ---- */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(218px,1fr));gap:14px}
+.step{position:relative;overflow:hidden;background:var(--surface);border-radius:var(--r-xl);
+  padding:20px 20px 19px;box-shadow:inset 0 0 0 1px var(--hairline), var(--e2);
+  transition:transform var(--t),box-shadow var(--t)}
+.step:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px var(--hairline), var(--e3)}
+.step::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--tint,var(--accent))}
+.step .sn{font-family:"Space Grotesk",sans-serif;font-size:10px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:color-mix(in srgb,var(--tint,var(--accent)) 76%,var(--ink))}
+.step .si{width:42px;height:42px;margin:11px 0 12px;border-radius:13px;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--tint,var(--accent)) 13%,var(--surface));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tint,var(--accent)) 30%,transparent)}
+.step .si svg{width:20px;height:20px;color:color-mix(in srgb,var(--tint,var(--accent)) 82%,var(--ink))}
+.step h4{font-size:15px;font-weight:800;line-height:1.45;margin-bottom:7px;letter-spacing:-.008em}
+.step p{font-size:12.5px;color:var(--muted);line-height:1.95}
+.step p b{color:var(--ink);font-weight:700}
 
-/* ---------- main tabs ---------- */
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 4px}
-.tab{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;padding:10px 20px;border-radius:12px;cursor:pointer;
-  background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:15px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
-.tab:hover{border-color:var(--border-strong);color:var(--ink)}
-.tab.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--cyan) 55%,transparent)}
+/* ---- 画面の図 ---- */
+.shot{position:relative;background:var(--surface);border-radius:var(--r-xl);overflow:hidden;
+  box-shadow:inset 0 0 0 1px var(--hairline), var(--e2)}
+.shot::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;
+  border-radius:var(--r-xl) var(--r-xl) 0 0;background:var(--edge);z-index:1}
+.shot figure{margin:0;padding:18px clamp(16px,3vw,22px) 6px}
+.shot svg.fig{display:block;width:100%;height:auto;border-radius:14px;
+  box-shadow:inset 0 0 0 1px var(--hairline)}
+.shot .legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:12px;
+  padding:16px clamp(16px,3vw,22px) 20px}
+.lg{display:flex;gap:11px;align-items:flex-start}
+.lg .k{width:22px;height:22px;border-radius:7px;flex:none;display:grid;place-items:center;
+  font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:700;color:#fff}
+.lg .t{font-size:12.5px;line-height:1.8;min-width:0}
+.lg .t b{font-weight:800}
+.lg .t span{color:var(--muted)}
 
-/* ---------- chip pool ---------- */
-.pool-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
-.pool-head h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:9px}
-.pool-head h3::before{content:"";width:14px;height:16px;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
-.addrow{display:flex;gap:8px;flex:1;min-width:240px}
-.addrow input{flex:1}
-.pool{display:flex;flex-wrap:wrap;gap:9px;min-height:44px}
-.chip{display:inline-flex;align-items:center;gap:8px;min-height:36px;line-height:1.2;background:var(--surface);border:1px solid var(--border-strong);color:var(--ink);
-  padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:var(--shadow-soft);cursor:grab;user-select:none;transition:.14s}
-.chip:hover{border-color:var(--pink)}
-.chip::before{content:"";width:9px;height:10px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
-.chip.has-av::before{display:none}
-.chip-av{width:20px;height:20px;flex:none;object-fit:cover;background:var(--surface-2);border-radius:50%}
-.av{width:20px;height:20px;flex:none;object-fit:cover;background:var(--surface-2);border-radius:50%;vertical-align:middle}
-.av.sm{width:18px;height:18px}
-.av.lg{width:26px;height:26px}
-.namecell{display:inline-flex;align-items:center;gap:7px}
-.chip.placed{opacity:.4}
-.chip.placed::before{background:var(--border-strong)}
-.chip.sel{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--pink) 55%,transparent)}
-.chip.sel::before{background:#fff}
-.chip.dragging{opacity:.4}
-.chip .x{font-size:12px;color:var(--muted);width:17px;height:17px;display:grid;place-items:center;border-radius:50%;line-height:1}
-.chip .x:hover{color:#fff;background:var(--danger)}
-.chip.sel .x{color:rgba(255,255,255,.85)}
-.chip.has-check{padding-left:8px}
-.chip-check{appearance:none;-webkit-appearance:none;-moz-appearance:none;margin:0;flex:none;
-  width:20px;height:20px;min-width:20px;border:2px solid var(--border-strong);border-radius:6px;
-  background:var(--surface);cursor:pointer;transition:border-color .14s,background-color .14s;
-  vertical-align:middle;position:relative;top:0}
-.chip-check:hover{border-color:var(--cyan)}
-.chip-check:checked{border-color:transparent;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 6.5'/%3E%3C/svg%3E"),var(--grad);
-  background-repeat:no-repeat,no-repeat;background-position:center,center;background-size:13px 13px,cover}
-.chip.has-check::before{display:none}
-.chip.absent{opacity:.62;background:var(--surface-2)}
-.chip.absent .nm{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--muted)}
-.chip.sel .chip-check{border-color:rgba(255,255,255,.85);background-color:transparent}
-.chip.sel .chip-check:checked{border-color:transparent;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 6.5'/%3E%3C/svg%3E"),linear-gradient(rgba(255,255,255,.32),rgba(255,255,255,.32));
-  background-repeat:no-repeat,no-repeat;background-position:center,center;background-size:13px 13px,cover}
-.pool-empty{color:var(--muted);font-size:13px}
-/* POPプールを上部に固定：下の卓へ割り当て中も選手チップが見え続ける */
-.pool-hint{margin:0 0 14px}
-.pool-panel{position:sticky;top:8px;z-index:40;margin-top:0;
-  box-shadow:0 10px 24px -14px rgba(0,0,0,.28),var(--shadow-soft)}
-.pool-panel .pool{max-height:min(32vh,208px);overflow:auto;overscroll-behavior:contain;
-  padding:2px;margin:-2px;-webkit-overflow-scrolling:touch}
+/* ---- 表 ---- */
+.tbl{position:relative;background:var(--surface);border-radius:var(--r-xl);overflow:hidden;
+  box-shadow:inset 0 0 0 1px var(--hairline), var(--e2)}
+.tbl table{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);padding:13px 18px;background:var(--surface-2);
+  box-shadow:inset 0 -1px 0 var(--hairline-2);white-space:nowrap}
+.tbl td{padding:12px 18px;box-shadow:inset 0 -1px 0 var(--hairline);line-height:1.7}
+.tbl tr:last-child td{box-shadow:none}
+.tbl td.c{text-align:center;font-weight:800;white-space:nowrap}
+.yes{color:var(--ok)}
+.no{color:var(--muted);opacity:.6}
 
-/* ---------- match selector ---------- */
-.matchsel{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 14px}
-.mtab{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;padding:8px 15px;border-radius:11px;cursor:pointer;
-  background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:13.5px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
-.mtab:hover{border-color:var(--border-strong);color:var(--ink)}
-.mtab.on{background:var(--grad);color:#fff;border-color:transparent}
-.mtab-roster{border-color:color-mix(in srgb,var(--cyan) 45%,var(--border));color:var(--cyan-deep)}
-.mtab-roster.on{background:linear-gradient(135deg,var(--cyan),var(--pink));color:#fff;border-color:transparent}
+/* ---- ポイント ---- */
+.pts{display:flex;gap:7px;flex-wrap:wrap}
+.pt{display:inline-flex;align-items:center;height:31px;padding:0 13px;border-radius:var(--r-full);
+  font-family:"Space Grotesk",sans-serif;font-size:12.5px;font-weight:700;color:var(--muted);
+  box-shadow:inset 0 0 0 1px var(--hairline-2);background:var(--surface)}
+.pt.top{color:var(--accent-deep);background:color-mix(in srgb,var(--accent) 10%,var(--surface));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 50%,transparent)}
 
-/* ---------- 参加者＋自動組卓バー ---------- */
-.assignbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:0}
-.assign-info{font-size:14px;color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.assign-h{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;font-weight:700;color:var(--cyan-deep)}
-.assign-info b{font-size:16px}
-.assign-acts{display:flex;gap:8px;flex-wrap:wrap}
-.assign-acts .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
-.assign-acts .btn[disabled]:hover{border-color:var(--border);transform:none}
+/* ---- よくある質問 ---- */
+.faq{position:relative;background:var(--surface);border-radius:var(--r-xl);overflow:hidden;
+  box-shadow:inset 0 0 0 1px var(--hairline), var(--e2)}
+.faq details{box-shadow:inset 0 -1px 0 var(--hairline)}
+.faq details:last-child{box-shadow:none}
+.faq summary{padding:16px 20px;font-size:13.5px;font-weight:700;cursor:pointer;
+  list-style:none;display:flex;align-items:center;gap:12px;transition:background var(--t)}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:"";width:16px;height:16px;flex:none;
+  background:currentColor;color:var(--accent-deep);
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'><path d='M12 5v14M5 12h14'/></svg>") center/contain no-repeat;
+          mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'><path d='M12 5v14M5 12h14'/></svg>") center/contain no-repeat;
+  transition:transform var(--t)}
+.faq details[open] summary::before{transform:rotate(45deg)}
+.faq summary:hover{background:var(--surface-2)}
+.faq .a{padding:0 20px 18px 48px;font-size:13px;color:var(--muted);line-height:2}
+.faq .a b{color:var(--ink);font-weight:700}
 
-/* ---------- tables ---------- */
-.tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
-.table{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-soft);overflow:hidden}
-.table-h{display:flex;align-items:center;gap:11px;padding:14px 16px;
-  background:linear-gradient(160deg,color-mix(in srgb,var(--cyan) 7%,var(--surface)),var(--surface));border-bottom:1px solid var(--border)}
-.table-h .thx{width:30px;height:34px;flex:none;display:grid;place-items:center;background:var(--grad);color:#fff;font-family:"Space Grotesk";font-weight:700;font-size:14px;
-  clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
-.table-h h3{font-size:16px;font-weight:800}
-.table-h .cnt{margin-left:auto;font-family:"Space Grotesk";font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 10px}
-/* チーム組：参加チェック（チーム名の左）＋参加外カードの見た目 */
-.team-check{appearance:none;-webkit-appearance:none;-moz-appearance:none;margin:0;flex:none;
-  width:20px;height:20px;min-width:20px;border:2px solid var(--border-strong);border-radius:6px;
-  background:var(--surface);cursor:pointer;transition:border-color .14s,background-color .14s;vertical-align:middle}
-.team-check:hover{border-color:var(--cyan)}
-.team-check:checked{border-color:transparent;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 6.5'/%3E%3C/svg%3E"),var(--grad);
-  background-repeat:no-repeat,no-repeat;background-position:center,center;background-size:13px 13px,cover}
-.table.inactive{opacity:.5;filter:grayscale(.5)}
-.table.inactive .team-check{opacity:1;filter:none}
-.rtag{font-family:"Space Grotesk";font-size:10.5px;font-weight:700;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:1px 8px;flex:none}
-.grp{padding:12px 16px}
-.grp-label{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:600;color:var(--cyan-deep);letter-spacing:.1em;margin:2px 0 8px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
-.grp-label::before{content:"";width:9px;height:10px;background:var(--cyan);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
-.grp-label.t2{color:var(--pink-deep)}
-.grp-label.t2::before{background:var(--pink)}
-/* チーム/ペア枠の見出し（対戦カード選択セレクタ）*/
-.grp-select{display:flex;align-items:center;gap:8px;margin:2px 0 8px}
-.grp-select::before{content:"";width:9px;height:10px;flex:none;background:var(--cyan);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
-.grp-select.t2::before{background:var(--pink)}
-.teamsel{flex:1;min-width:0;font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;font-weight:700;font-size:14px;
-  padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink)}
-.teamsel:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px color-mix(in srgb,var(--cyan) 16%,transparent)}
-.grp-select.t2 .teamsel{color:var(--pink-deep)}
-.grp-vs{text-align:center;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:11px;letter-spacing:.18em;color:var(--muted);
-  margin:2px 0;position:relative}
-.grp-vs::before,.grp-vs::after{content:"";position:absolute;top:50%;width:calc(50% - 22px);height:1px;background:var(--border)}
-.grp-vs::before{left:0}.grp-vs::after{right:0}
-.grp.grp-pair{padding-top:6px;padding-bottom:6px}
-.grp.grp-pair+.grp.grp-pair{border-top:1px dashed var(--border)}
-.seats{display:grid;grid-template-columns:1fr;gap:8px}
-.seat{display:flex;align-items:center;gap:8px;min-height:42px;border:1px dashed var(--border-strong);border-radius:12px;padding:6px 10px;font-size:13.5px;background:var(--surface-2);transition:.14s}
-.seat.over{border-style:solid;border-color:var(--pink);background:color-mix(in srgb,var(--pink) 9%,var(--surface))}
-.seat.filled{border-style:solid;border-color:color-mix(in srgb,var(--cyan) 40%,var(--border));background:var(--surface)}
-.seat .sn{font-family:"Space Grotesk";font-size:10px;color:var(--muted);width:14px;flex:none}
-.seat .nm{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.seat.empty .nm{color:var(--muted);font-weight:400}
-.seat .rm{font-size:12px;color:var(--muted);cursor:pointer;flex:none;width:18px;height:18px;display:grid;place-items:center;border-radius:50%}
-.seat .rm:hover{color:#fff;background:var(--danger)}
+/* ---- しめ ---- */
+.foot{margin-top:46px;padding:26px 0 0;text-align:center;
+  box-shadow:inset 0 1px 0 var(--hairline);font-size:13px;color:var(--muted);line-height:2}
+.foot .btn{margin-top:14px}
 
-/* ---------- results ---------- */
-.subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.subtab{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;padding:7px 14px;border-radius:11px;cursor:pointer;
-  background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:13.5px;font-weight:600;transition:.16s;box-shadow:var(--shadow-soft)}
-.subtab:hover{border-color:var(--border-strong);color:var(--ink)}
-.subtab.on{background:var(--grad);color:#fff;border-color:transparent}
-.res-actions{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-.btn{font-family:"Space Grotesk","Zen Kaku Gothic New",sans-serif;font-size:14px;font-weight:600;padding:10px 16px;border-radius:12px;
-  border:1px solid var(--border);background:var(--surface);color:var(--ink);box-shadow:var(--shadow-soft);transition:.16s}
-.btn:hover{border-color:var(--border-strong);transform:translateY(-1px)}
-.btn.sm{padding:7px 12px;font-size:12.5px}
-.btn.grad{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 10px 22px -10px color-mix(in srgb,var(--pink) 55%,transparent)}
-.btn.grad:hover{filter:brightness(1.05)}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-soft);padding:clamp(16px,2.4vw,22px);margin-bottom:18px}
-.card h3{font-size:17px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.card h3::before{content:"";width:14px;height:16px;flex:none;background:var(--grad);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
-.rtable{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;border:1px solid var(--border);border-radius:14px;overflow:hidden;table-layout:fixed}
-.rtable td .namecell,.rtable td>div,.rtable td strong{min-width:0}
-.rtable td.nm-cell{overflow:hidden}
-.rtable .namecell{max-width:100%}
-.rtable .namecell>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rtable th,.rtable td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
-.rtable tbody tr:last-child td{border-bottom:none}
-.rtable th{background:var(--surface-2);font-family:"Space Grotesk",sans-serif;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.rtable td.r{text-align:right}.rtable td.c{text-align:center}
-.rtable th.r{text-align:right}.rtable th.c{text-align:center}
-.rtable tbody tr:hover{background:color-mix(in srgb,var(--pink) 4%,transparent)}
-.rankhex{width:27px;height:30px;display:inline-grid;place-items:center;font-family:"Space Grotesk";font-weight:700;font-size:13px;color:var(--muted);
-  background:var(--bg-2);clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%)}
-.rankhex.r1{background:var(--grad);color:#fff}
-.rankhex.r2{background:color-mix(in srgb,var(--cyan) 28%,var(--surface));color:var(--cyan-deep)}
-.rankhex.r3{background:color-mix(in srgb,var(--pink) 26%,var(--surface));color:var(--pink-deep)}
-.pts{font-family:"Space Grotesk";font-weight:700;color:var(--cyan-deep)}
-.rinput{width:54px;text-align:center;padding:6px;border-radius:9px}
-.winner{display:inline-block;background:var(--grad);color:#fff;font-family:"Space Grotesk";font-weight:700;font-size:11px;padding:2px 9px;border-radius:999px;margin-left:8px}
-.teamblock{border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:12px;background:var(--surface-2)}
-.teamblock.win{border-color:color-mix(in srgb,var(--pink) 45%,var(--border));background:color-mix(in srgb,var(--pink) 5%,var(--surface))}
-.teamblock h4{font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.memberline{display:flex;flex-wrap:wrap;gap:6px}
-.memberchip{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 9px 3px 4px;font-size:12.5px;font-weight:600}
-.memberchip .av{width:18px;height:18px}
-.muted{color:var(--muted);font-size:13px}
-
-footer{margin-top:54px;padding-top:22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;
-  align-items:center;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:13px}
-footer .brand{font-family:"Space Grotesk",sans-serif;letter-spacing:.05em;background:var(--grad);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:600}
-footer a:hover{color:var(--pink)}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--pink);
-  color:var(--ink);padding:11px 20px;border-radius:13px;font-weight:600;font-size:14px;box-shadow:var(--shadow);z-index:50;max-width:90vw}
-.hidden{display:none!important}
-@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-section[id^="view-"]{animation:rise .4s both}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media (max-width:600px){
-  .tables{grid-template-columns:1fr}.seats{grid-template-columns:1fr}
-  .hero-row{flex-direction:column;align-items:center;text-align:center}
-  .hero-text{text-align:center}.logorow{justify-content:center}
-  .bubble{left:auto;right:6%;top:0}
+@media (max-width:620px){
+  .hero-in{padding:26px 20px}
+  .chap > h3{font-size:17px}
+  .chap > .cl{margin-left:0}
+  .tbl th,.tbl td{padding:11px 13px}
+  .faq summary{padding:14px 15px}
+  .faq .a{padding:0 15px 15px 43px}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <header class="hero">
-    <button class="themebtn" id="themeBtn" title="テーマ切替" aria-label="テーマ切替">🌙</button>
-    <div class="hero-row">
-      <div class="hero-text">
-        <div class="logorow"><span class="logohex">⬡</span><span class="eyebrow">Mountain Chonk School</span></div>
+  <div class="top">
+    <div class="brand">
+      <div class="brandmark"><img src="assets/mark.png" alt="TFT リーダーボード" onerror="this.parentNode.classList.add('noimg');this.remove()"></div>
+      <div>
         <h1>TFT リーダーボード</h1>
-        <p class="subtitle">名前を並べて卓を組み、Riot APIで順位を自動集計</p>
+        <div class="sub">大会・スクリム用</div>
       </div>
     </div>
+    <div class="spacer"></div>
+    <a class="iconbtn" id="goBtn" href="login.html">ログイン</a>
+    <button class="iconbtn sq" id="themeBtn" title="表示を切り替え" aria-label="表示を切り替え"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2z"/></svg></button>
+  </div>
 
-    <div class="toolbar">
-      <div class="modeset" id="modes">
-        <button class="mode" data-mode="solo">個人戦</button>
-        <button class="mode" data-mode="team">チーム戦 4v4</button>
-        <button class="mode" data-mode="doubleup">ダブルアップ</button>
+  <!-- ============ ヒーロー ============ -->
+  <div class="hero">
+    <div class="hero-in">
+      <div class="eyebrow">TFT Leaderboard</div>
+      <h2>大会の<span class="g">組卓と順位</span>を、<br>みんなで同じ画面で。</h2>
+      <p>
+        Discord でログインすると<b>自動で選手登録</b>されます。
+        主催は参加者を卓へドラッグして配置し、順位を入れるだけ。
+        累計ポイントの全体順位が<b>その場で全員の画面に反映</b>されます。
+        アプリも、スプレッドシートの共有も要りません。
+      </p>
+      <div class="cta" id="heroCta">
+        <a class="btn" href="login.html">ログインして始める</a>
+        <a class="btn sec" href="#organizer">主催する人はこちら</a>
       </div>
-      <span class="spacer"></span>
-      <span id="syncBadge" class="badge local">接続中…</span>
-      <button class="linkbtn" id="copyLink">共有リンク</button>
-      <a class="linkbtn" id="editorLink" href="editor.html">管理コンソール</a>
-    </div>
-  </header>
-
-  <div class="panel">
-    <div class="settings">
-      <div class="field"><label>試合数</label><input type="number" id="matchCount" min="1" max="20" value="3"></div>
-      <div class="field"><label>卓数</label><input type="number" id="tableCount" min="1" max="12" value="2"></div>
-      <div class="field" style="flex:1"></div>
-      <div class="hint" id="modeHint"></div>
     </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab on" data-tab="setup">組 卓</button>
-    <button class="tab" data-tab="results">結 果</button>
+  <!-- ============ 参加する人 ============ -->
+  <div class="chap">
+    <h3><span class="n">1</span> 参加する人の使い方</h3>
+    <div class="cl">やることは3つだけ。1分で終わります。</div>
+    <div class="steps">
+      <div class="step" style="--tint:var(--sky)">
+        <div class="sn">STEP 1</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 11h4M8.5 9v4"/><circle cx="15.5" cy="10.2" r=".9" fill="currentColor" stroke="none"/><circle cx="17.6" cy="12.6" r=".9" fill="currentColor" stroke="none"/><path d="M7.4 5.5h9.2a4.4 4.4 0 0 1 4.3 3.5l1 5a3.3 3.3 0 0 1-6.1 2.3L15 15H9l-.8 1.3A3.3 3.3 0 0 1 2.1 14l1-5a4.4 4.4 0 0 1 4.3-3.5z"/></svg></div>
+        <h4>Riot ID を入れる</h4>
+        <p>ゲーム内の <b>Name#TAG</b>（例: Mo10C#819）を入力して「確認する」。
+          いまのランクが自動で取れます。</p>
+      </div>
+      <div class="step" style="--tint:var(--navy)">
+        <div class="sn">STEP 2</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8 8 0 0 1-8.6 8 9 9 0 0 1-3.4-.7L3 21l1.4-4.2A8 8 0 0 1 12.4 3.5 8 8 0 0 1 21 11.5z"/></svg></div>
+        <h4>Discord でログイン</h4>
+        <p>名前・アイコン・<b>ロール</b>を読み取ります。
+          ロールは組卓の絞り込みや振り分けに使われます。</p>
+      </div>
+      <div class="step" style="--tint:var(--leaf)">
+        <div class="sn">STEP 3</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21h10M12 17v4M5 4h14v5a7 7 0 0 1-14 0z"/><path d="M5 6H3.5A1.5 1.5 0 0 0 2 7.5 3.5 3.5 0 0 0 5.5 11M19 6h1.5A1.5 1.5 0 0 1 22 7.5 3.5 3.5 0 0 1 18.5 11"/></svg></div>
+        <h4>入場する</h4>
+        <p>押すだけで<b>選手として登録</b>され、参加者バーに並びます。
+          あとは主催の指示を待つだけ。</p>
+      </div>
+    </div>
+    <div class="cl" style="margin-top:14px">
+      入場したあと、あなたが自分でできるのは<b>「この試合に出るかどうか」のチェック</b>だけです。
+      席の配置や順位の入力は主催が行います。
+    </div>
   </div>
 
-  <!-- ============ SETUP ============ -->
-  <section id="view-setup">
-    <div class="hint pool-hint">各POPの<b>チェック</b>でこの試合の参加者を切替（既定＝全員参加）。チップをタップ → 席をタップで配置（PCはドラッグも可）。<b>チーム戦／ダブルアップ</b>は <b>🧩 チーム組</b> タブでチーム名と既定メンバーを設定（名前の左の<b>☑</b>で参加チームを選択）→ 各試合は枠上部の <b>▼</b> でチームを選ぶとその編成を引き継ぎます（試合ごとに入替も可）。</div>
-    <div class="panel pool-panel">
-      <div class="pool-head">
-        <h3>選手 POP</h3>
-        <div class="addrow">
-          <input id="nameInput" placeholder="名前を入力（Riot IDは管理コンソールで登録）" maxlength="24">
-          <button class="btn grad" id="addBtn">追加</button>
+  <!-- ============ 画面の見かた ============ -->
+  <div class="chap">
+    <h3><span class="n">2</span> ボードの見かた</h3>
+    <div class="cl">ログインすると開く画面です。上から順にこうなっています。</div>
+    <div class="shot">
+      <figure>
+        <svg class="fig" viewBox="0 0 800 400" role="img" aria-label="ボード画面の構成図">
+          <rect width="800" height="400" fill="var(--surface-2)"/>
+
+          <!-- ヘッダー -->
+          <rect x="16" y="14" width="768" height="38" rx="10" fill="var(--surface)" stroke="var(--border-strong)"/>
+          <circle cx="40" cy="33" r="11" fill="var(--accent)"/>
+          <rect x="60" y="25" width="120" height="7" rx="3.5" fill="var(--ink)" opacity=".62"/>
+          <rect x="60" y="37" width="72" height="5" rx="2.5" fill="var(--muted)" opacity=".5"/>
+          <rect x="600" y="23" width="80" height="19" rx="9.5" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+          <rect x="690" y="23" width="80" height="19" rx="9.5" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+
+          <!-- ① 参加者バー -->
+          <rect x="16" y="62" width="768" height="88" rx="12" fill="var(--surface)" stroke="var(--sky)" stroke-width="2"/>
+          <circle cx="36" cy="80" r="10" fill="var(--sky)"/>
+          <text x="36" y="84" font-size="11" font-weight="700" fill="#fff" text-anchor="middle"
+                font-family="Space Grotesk, sans-serif">1</text>
+          <rect x="54" y="74" width="96" height="8" rx="4" fill="var(--ink)" opacity=".55"/>
+          <g>
+            <rect x="30" y="98" width="112" height="38" rx="10" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+            <circle cx="52" cy="117" r="11" fill="var(--leaf)" opacity=".8"/>
+            <rect x="70" y="109" width="56" height="6" rx="3" fill="var(--ink)" opacity=".5"/>
+            <rect x="70" y="120" width="38" height="5" rx="2.5" fill="var(--muted)" opacity=".55"/>
+          </g>
+          <g opacity=".85">
+            <rect x="152" y="98" width="112" height="38" rx="10" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+            <circle cx="174" cy="117" r="11" fill="var(--coral)" opacity=".8"/>
+            <rect x="192" y="109" width="56" height="6" rx="3" fill="var(--ink)" opacity=".5"/>
+            <rect x="192" y="120" width="38" height="5" rx="2.5" fill="var(--muted)" opacity=".55"/>
+          </g>
+          <g opacity=".7">
+            <rect x="274" y="98" width="112" height="38" rx="10" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+            <circle cx="296" cy="117" r="11" fill="var(--mint)" opacity=".8"/>
+            <rect x="314" y="109" width="56" height="6" rx="3" fill="var(--ink)" opacity=".5"/>
+            <rect x="314" y="120" width="38" height="5" rx="2.5" fill="var(--muted)" opacity=".55"/>
+          </g>
+          <!-- ドラッグの矢印 -->
+          <path d="M400 117 C 450 117, 460 180, 508 196" stroke="var(--accent)" stroke-width="2.5"
+                fill="none" stroke-dasharray="6 5"/>
+          <path d="M508 196 l -12 -7 l 2 12 z" fill="var(--accent)"/>
+          <text x="432" y="150" font-size="11" font-weight="700" fill="var(--accent-deep)"
+                font-family="Zen Kaku Gothic New, sans-serif">ドラッグ</text>
+
+          <!-- ② 試合タブ -->
+          <rect x="16" y="160" width="768" height="30" rx="10" fill="var(--surface)" stroke="var(--leaf)" stroke-width="2"/>
+          <circle cx="36" cy="175" r="10" fill="var(--leaf)"/>
+          <text x="36" y="179" font-size="11" font-weight="700" fill="#fff" text-anchor="middle"
+                font-family="Space Grotesk, sans-serif">2</text>
+          <rect x="54" y="167" width="62" height="16" rx="8" fill="var(--accent)"/>
+          <rect x="122" y="167" width="62" height="16" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+          <rect x="190" y="167" width="62" height="16" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+          <rect x="258" y="167" width="54" height="16" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+
+          <!-- ③ 卓 -->
+          <rect x="16" y="200" width="374" height="184" rx="12" fill="var(--surface)" stroke="var(--coral)" stroke-width="2"/>
+          <circle cx="36" cy="218" r="10" fill="var(--coral)"/>
+          <text x="36" y="222" font-size="11" font-weight="700" fill="#fff" text-anchor="middle"
+                font-family="Space Grotesk, sans-serif">3</text>
+          <rect x="54" y="212" width="46" height="8" rx="4" fill="var(--ink)" opacity=".55"/>
+          <g>
+            <rect x="30" y="234" width="346" height="24" rx="8" fill="var(--surface-2)" stroke="var(--accent)" stroke-width="1.5"/>
+            <circle cx="46" cy="246" r="8" fill="var(--leaf)" opacity=".8"/>
+            <rect x="62" y="243" width="72" height="6" rx="3" fill="var(--ink)" opacity=".5"/>
+            <rect x="330" y="240" width="34" height="13" rx="6.5" fill="var(--accent)"/>
+          </g>
+          <rect x="30" y="264" width="346" height="24" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-dasharray="4 4"/>
+          <rect x="30" y="294" width="346" height="24" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-dasharray="4 4"/>
+          <rect x="30" y="324" width="346" height="24" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-dasharray="4 4"/>
+          <rect x="30" y="354" width="346" height="20" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-dasharray="4 4"/>
+
+          <!-- ④ 結果 -->
+          <rect x="402" y="200" width="382" height="184" rx="12" fill="var(--surface)" stroke="var(--navy)" stroke-width="2"/>
+          <circle cx="422" cy="218" r="10" fill="var(--navy)"/>
+          <text x="422" y="222" font-size="11" font-weight="700" fill="#fff" text-anchor="middle"
+                font-family="Space Grotesk, sans-serif">4</text>
+          <rect x="440" y="212" width="82" height="8" rx="4" fill="var(--ink)" opacity=".55"/>
+          <g font-family="Space Grotesk, sans-serif" font-size="12" font-weight="700">
+            <text x="424" y="253" fill="var(--accent-deep)">1</text>
+            <circle cx="452" cy="249" r="9" fill="var(--leaf)" opacity=".8"/>
+            <rect x="470" y="245" width="90" height="7" rx="3.5" fill="var(--ink)" opacity=".5"/>
+            <text x="760" y="253" fill="var(--ink)" text-anchor="end">8</text>
+
+            <text x="424" y="283" fill="var(--muted)">2</text>
+            <circle cx="452" cy="279" r="9" fill="var(--coral)" opacity=".8"/>
+            <rect x="470" y="275" width="74" height="7" rx="3.5" fill="var(--ink)" opacity=".42"/>
+            <text x="760" y="283" fill="var(--ink)" text-anchor="end">7</text>
+
+            <text x="424" y="313" fill="var(--muted)">3</text>
+            <circle cx="452" cy="309" r="9" fill="var(--mint)" opacity=".8"/>
+            <rect x="470" y="305" width="82" height="7" rx="3.5" fill="var(--ink)" opacity=".42"/>
+            <text x="760" y="313" fill="var(--ink)" text-anchor="end">5</text>
+
+            <text x="424" y="343" fill="var(--muted)">4</text>
+            <circle cx="452" cy="339" r="9" fill="var(--sky)" opacity=".8"/>
+            <rect x="470" y="335" width="66" height="7" rx="3.5" fill="var(--ink)" opacity=".42"/>
+            <text x="760" y="343" fill="var(--ink)" text-anchor="end">4</text>
+          </g>
+        </svg>
+      </figure>
+      <div class="legend">
+        <div class="lg"><span class="k" style="background:var(--sky)">1</span>
+          <span class="t"><b>参加者バー</b><br><span>入場した人が自動で並びます。チェックが「この試合に出る」</span></span></div>
+        <div class="lg"><span class="k" style="background:var(--leaf)">2</span>
+          <span class="t"><b>試合タブ</b><br><span>第1試合・第2試合…と切り替え。いちばん右が「結果」</span></span></div>
+        <div class="lg"><span class="k" style="background:var(--coral)">3</span>
+          <span class="t"><b>卓と席</b><br><span>1卓8席。参加者をここへドラッグして配置します</span></span></div>
+        <div class="lg"><span class="k" style="background:var(--navy)">4</span>
+          <span class="t"><b>全体順位</b><br><span>累計ポイントの順位。順位を入れると自動で並びかわります</span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 主催する人 ============ -->
+  <div class="chap" id="organizer">
+    <h3><span class="n">3</span> 主催する人の使い方</h3>
+    <div class="cl">
+      管理者として設定された人だけが、ここから先を操作できます
+      （<code style="font-family:'Space Grotesk',monospace">config.js</code> の <b>admins</b> に入れた人）。
+    </div>
+    <div class="steps">
+      <div class="step" style="--tint:var(--gold)">
+        <div class="sn">準備</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.2v2.4M12 19.4v2.4M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M2.2 12h2.4M19.4 12h2.4M4.9 19.1l1.7-1.7M17.4 6.6l1.7-1.7"/></svg></div>
+        <h4>大会を作る</h4>
+        <p><b>管理画面 →「大会の管理」</b>で新しい大会を作り、
+          <b>「この大会」</b>で名前・試合数・卓数を決めます。</p>
+      </div>
+      <div class="step" style="--tint:var(--sky)">
+        <div class="sn">告知</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a4 4 0 0 0 5.7.4l3-3A4 4 0 0 0 13 4.7l-1.2 1.2"/><path d="M14 11a4 4 0 0 0-5.7-.4l-3 3A4 4 0 0 0 11 19.3l1.2-1.2"/></svg></div>
+        <h4>URLを配る</h4>
+        <p>管理画面の下にある<b>「参加者に配るURLをコピー」</b>を押して、
+          Discord などに貼るだけ。開いた人が自動で並びます。</p>
+      </div>
+      <div class="step" style="--tint:var(--coral)">
+        <div class="sn">当日</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V4.8a1.3 1.3 0 0 1 2.6 0V11"/><path d="M11.6 10.4V3.8a1.3 1.3 0 0 1 2.6 0v6.6"/><path d="M14.2 10.8V6.2a1.3 1.3 0 0 1 2.6 0V14"/><path d="M6.4 12.4V9.6a1.3 1.3 0 0 1 2.6 0V13"/><path d="M6.4 12.4c0 4.4 2.4 8.2 6.4 8.2s4-3.4 4-6.6"/></svg></div>
+        <h4>組卓する</h4>
+        <p>参加者を卓の席へ<b>ドラッグ</b>。
+          席どうしのドラッグで入れ替え、参加者バーへ戻すと外れます。
+          <b>自動で組卓</b>もあります。</p>
+      </div>
+      <div class="step" style="--tint:var(--leaf)">
+        <div class="sn">対戦後</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><rect x="5" y="11" width="4" height="7" rx="1"/><rect x="11" y="6" width="4" height="12" rx="1"/><rect x="17" y="14" width="4" height="4" rx="1"/></svg></div>
+        <h4>順位を入れる</h4>
+        <p><b>「結果」タブ</b>で1位〜8位を選ぶだけ。
+          <b>順位の自動取得</b>を押すと、Riot の対戦履歴から順位を読み取ります。</p>
+      </div>
+    </div>
+
+    <div class="cl" style="margin-top:20px;margin-left:0"><b>ポイントの入りかた</b></div>
+    <div class="pts">
+      <span class="pt top">1位 8pt</span><span class="pt top">2位 7pt</span>
+      <span class="pt top">3位 6pt</span><span class="pt top">4位 5pt</span>
+      <span class="pt">5位 4pt</span><span class="pt">6位 3pt</span>
+      <span class="pt">7位 2pt</span><span class="pt">8位 1pt</span>
+    </div>
+  </div>
+
+  <!-- ============ できること ============ -->
+  <div class="chap">
+    <h3><span class="n">4</span> 誰が何をできるか</h3>
+    <div class="cl">主催（管理者）と、ふつうの参加者でできることが分かれています。</div>
+    <div class="tbl">
+      <table>
+        <tr><th>できること</th><th style="text-align:center">主催</th><th style="text-align:center">参加者</th></tr>
+        <tr><td>ボードを見る・全体順位を見る</td><td class="c yes">○</td><td class="c yes">○</td></tr>
+        <tr><td>ログインして自分を登録する</td><td class="c yes">○</td><td class="c yes">○</td></tr>
+        <tr><td><b>自分の</b>出欠チェック</td><td class="c yes">○</td><td class="c yes">○</td></tr>
+        <tr><td>他の人の出欠・一括操作</td><td class="c yes">○</td><td class="c no">—</td></tr>
+        <tr><td>大会名・試合数・卓数の変更</td><td class="c yes">○</td><td class="c no">—</td></tr>
+        <tr><td>組卓・席の配置・順位の入力</td><td class="c yes">○</td><td class="c no">—</td></tr>
+        <tr><td>管理画面を開く</td><td class="c yes">○</td><td class="c no">—</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ FAQ ============ -->
+  <div class="chap">
+    <h3><span class="n">5</span> よくある質問</h3>
+    <div class="cl">つまずきやすいところをまとめました。</div>
+    <div class="faq">
+      <details open>
+        <summary>ログインしたのに参加者に並びません</summary>
+        <div class="a">
+          ログイン画面の<b>「ボードに入場する」まで押す</b>と並びます。
+          Riot ID の確認と Discord ログインの両方が終わっていないとボタンが押せません。
         </div>
-      </div>
-      <div class="pool" id="pool"></div>
+      </details>
+      <details>
+        <summary>ランクが「ランクなし」になります</summary>
+        <div class="a">
+          そのアカウントが<b>今のセットでランク戦をまだプレイしていない</b>ときの表示です。
+          正常な動作で、大会の進行には影響しません。
+        </div>
+      </details>
+      <details>
+        <summary>名前を変えたい／変わってしまう</summary>
+        <div class="a">
+          表示名は Discord の名前をそのまま使います。固定したいときは主催に頼んでください。
+          管理画面の<b>「メンバー」で表示名を入れると、本人が再ログインしても変わらなくなります</b>。
+        </div>
+      </details>
+      <details>
+        <summary>順位の自動取得で順位が入りません</summary>
+        <div class="a">
+          その卓の<b>2人以上が同じ対戦に入っている</b>必要があります。
+          直近の履歴から探すので、対戦直後に押してください。
+          見つからない人は手で入れられます（誰が見つからなかったかは画面に出ます）。
+        </div>
+      </details>
+      <details>
+        <summary>途中で試合数や卓数を減らしたい</summary>
+        <div class="a">
+          減らせますが、<b>その先の試合・卓に入っていた配置と順位は消えます</b>。
+          消える前に管理画面の「💾 データ」からバックアップを取っておくと安心です。
+        </div>
+      </details>
+      <details>
+        <summary>特定のロールの人だけ入れるようにしたい</summary>
+        <div class="a">
+          管理画面の<b>「この大会」→ 公開範囲</b>で「指定ロールの保持者だけ」を選び、
+          ロールを選んで保存します。管理者はいつでも入れます。
+        </div>
+      </details>
+      <details>
+        <summary>運営は参加者に入れたくない</summary>
+        <div class="a">
+          <code>config.js</code> の <b>roles.staffRoleIds</b> に運営ロールのIDを入れると、
+          その人は「見るだけの人」になり、参加者・組卓・全体順位に入らなくなります。
+          出てもらうときは管理画面の「メンバー」で<b>「大会に参加」</b>をONにしてください。
+        </div>
+      </details>
+      <details>
+        <summary>データはどこに保存されますか</summary>
+        <div class="a">
+          Firestore に保存され、開いている全員の画面へ<b>リアルタイムで反映</b>されます。
+          ヘッダーに <b>● LIVE 共有中</b> と出ていれば共有できています。
+          「ローカル保存モード」と出ているときは、そのブラウザの中だけに保存されています。
+        </div>
+      </details>
     </div>
+  </div>
 
-    <div class="matchsel" id="matchSel"></div>
-    <div id="assignBar"></div>
-    <div class="tables" id="tables"></div>
-  </section>
+  <div class="foot">
+    準備ができたら、ログインして始めましょう。
+    <div><a class="btn" href="login.html">ログインして始める</a></div>
+  </div>
 
-  <!-- ============ RESULTS ============ -->
-  <section id="view-results" class="hidden">
-    <div class="res-actions">
-      <button class="btn grad" id="fetchAllBtn">全卓を自動取得（Riot API）</button>
-      <span class="hint" id="apiHint"></span>
-    </div>
-    <div class="subtabs" id="resSubtabs"></div>
-    <div id="resBody"></div>
-  </section>
-
-  <footer>
-    <span class="brand">⬡ MOUNTAIN CHONK SCHOOL</span>
-    <span>ボードID: <b id="boardIdLabel" class="num"></b> ／ 同じURLを共有すれば全員が同じボードを操作・閲覧できます</span>
-  </footer>
 </div>
 
-<div id="toast" class="toast hidden"></div>
-
-<!-- Firebase (compat) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script src="config.js"></script>
-<script src="tft-core.js"></script>
 <script>
 (function(){
-  const C=window.TFTCore, store=C.makeStore();
-  let curTab="setup", curMatch=0, curResMatch="overall", selectedChip=null, rosterTab=false;
-  const $=s=>document.querySelector(s);
-  const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e;};
-  function avImg(url,cls){if(!url)return null;const im=el("img","av"+(cls?" "+cls:""));im.src=url;im.alt="";im.loading="lazy";im.onerror=()=>im.remove();return im;}
-  // 結果テーブルの列幅を固定（順位/選手/[試合数]/pt を全表で揃える）
-  function colg(tbl,widths){const cg=document.createElement("colgroup");widths.forEach(w=>{const c=document.createElement("col");if(w)c.style.width=w;cg.appendChild(c);});tbl.insertBefore(cg,tbl.firstChild);}
-  // 名前＋アバターのセル（テーブル用）
-  function nameWithAv(s,pid,name){const sp=el("span","namecell");const a=avImg(C.avatarOf(s,pid),"sm");if(a)sp.appendChild(a);sp.appendChild(el("span","",name!=null?name:C.nameOf(s,pid)));return sp;}
-  function toast(m){const t=$("#toast");t.textContent=m;t.classList.remove("hidden");clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.add("hidden"),2600);}
-
-  /* ---- theme ---- */
-  const themeBtn=$("#themeBtn");
-  function applyTheme(t){document.documentElement.setAttribute("data-theme",t);themeBtn.textContent=t==="dark"?"☀️":"🌙";try{localStorage.setItem("mcc-portal-theme",t);}catch(e){}}
-  themeBtn.addEventListener("click",()=>applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark"));
-  applyTheme(localStorage.getItem("mcc-portal-theme")||"light");
-
-  /* ---- init ---- */
-  store.onChange(render);
-  store.init().then(({mode,boardId})=>{
-    const b=$("#syncBadge");
-    if(mode==="firestore"){b.className="badge live";b.textContent="● LIVE 共有中";}
-    else{b.className="badge local";b.textContent="● ローカル保存のみ";}
-    $("#boardIdLabel").textContent=boardId;
-    $("#editorLink").href="editor.html"+location.search;
-    $("#apiHint").textContent=C.Riot.enabled()?"":"※ Worker URL未設定のため手入力のみ（管理コンソールのRiot API設定で登録できます）";
-    render(store.state);
-  });
-
-  /* ---- header ---- */
-  $("#copyLink").onclick=()=>{navigator.clipboard?.writeText(location.href);toast("共有リンクをコピーしました");};
-  $("#modes").addEventListener("click",e=>{
-    const m=e.target.closest(".mode");if(!m)return;
-    if(m.dataset.mode===store.state.mode)return;
-    if(!confirm("モードを変更すると現在の組卓・順位はリセットされます。続行しますか？"))return;
-    store.setSettings({mode:m.dataset.mode});
-  });
-  $("#matchCount").addEventListener("change",e=>store.setSettings({matchCount:+e.target.value}));
-  $("#tableCount").addEventListener("change",e=>store.setSettings({tableCount:+e.target.value}));
-
-  /* ---- main tabs ---- */
-  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
-    curTab=t.dataset.tab;
-    document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===t));
-    $("#view-setup").classList.toggle("hidden",curTab!=="setup");
-    $("#view-results").classList.toggle("hidden",curTab!=="results");
-    render(store.state);
-  });
-
-  /* ---- add ---- */
-  $("#addBtn").onclick=addPlayer;
-  $("#nameInput").addEventListener("keydown",e=>{if(e.key==="Enter")addPlayer();});
-  function addPlayer(){const v=$("#nameInput").value.trim();if(!v)return;store.addPlayer(v);$("#nameInput").value="";$("#nameInput").focus();}
-
-  /* ---- fetch ---- */
-  $("#fetchAllBtn").onclick=async()=>{
-    if(!C.Riot.enabled()){toast("Worker URL未設定：管理コンソールのRiot API設定で登録してください");return;}
-    const s=store.state,mi=(curResMatch==="overall")?null:+curResMatch;
-    const targets=(mi==null)?s.matches.map((_,i)=>i):[mi];
-    for(const m of targets)for(let t=0;t<s.tableCount;t++)await fetchTable(m,t);
+  // テーマ切り替えだけ。このページはログイン不要で読めます。
+  const KEY = "mcc-portal-theme";
+  const btn = document.getElementById("themeBtn");
+  const ICON_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2z"/></svg>';
+  const ICON_SUN  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  function apply(t){
+    document.documentElement.setAttribute("data-theme", t);
+    btn.innerHTML = (t === "dark") ? ICON_SUN : ICON_MOON;
+  }
+  let cur = "light";
+  try { cur = localStorage.getItem(KEY) || "light"; } catch(e){}
+  apply(cur);
+  btn.onclick = () => {
+    const t = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    try { localStorage.setItem(KEY, t); } catch(e){}
+    apply(t);
   };
-  async function fetchTable(matchIdx,tableIdx){
-    const s=store.state,tb=s.matches[matchIdx].tables[tableIdx];
-    const players=tb.seats.filter(Boolean).map(pid=>{const p=C.playerById(s,pid);return{pid,riotId:p?p.riotId:""};});
-    if(players.filter(p=>p.riotId&&p.riotId.includes("#")).length<2){toast(`第${matchIdx+1}試合 卓${tableIdx+1}: Riot ID登録済みが2人未満`);return;}
-    try{
-      toast(`第${matchIdx+1}試合 卓${tableIdx+1} を照合中…`);
-      const res=await C.Riot.autoDetectTable(players);
-      if(!res){toast(`第${matchIdx+1}試合 卓${tableIdx+1}: 全員を含む試合が見つかりません`);return;}
-      Object.entries(res.placements).forEach(([pid,rank])=>store.setPlacement(matchIdx,tableIdx,pid,rank));
-      toast(`第${matchIdx+1}試合 卓${tableIdx+1} 反映完了`);
-    }catch(e){toast("取得失敗: "+e.message);}
-  }
 
-  /* ================= RENDER ================= */
-  function render(s){
-    $("#matchCount").value=s.matchCount;$("#tableCount").value=s.tableCount;
-    document.querySelectorAll(".mode").forEach(m=>m.classList.toggle("on",m.dataset.mode===s.mode));
-    $("#modeHint").textContent=modeHint(s.mode);
-    if(curMatch>=s.matchCount)curMatch=s.matchCount-1;
-    if(s.mode==="solo")rosterTab=false; // 個人戦にチーム組は無い
-    if(curTab==="setup"){
-      renderPool(s);
-      renderMatchSel(s);
-      if(rosterTab && s.mode!=="solo"){ renderRosterBar(s); renderRosterEditor(s); }
-      else { renderAssignBar(s); renderTables(s); }
+  /* すでにログインしている人には「ボードへ」を出す。
+     このページは core.js を読み込まないので、保存されている
+     セッションの形だけを見て判断する（ログインの強制はしない）。 */
+  let signedIn = false, who = "";
+  try {
+    const s = JSON.parse(localStorage.getItem("mcc-lb2-session") || "null");
+    if (s && s.discord && s.discord.id && s.riot && s.riot.puuid){
+      signedIn = true;
+      who = s.discord.name || s.discord.username || "";
     }
-    else renderResults(s);
-  }
-  function modeHint(mode){
-    if(mode==="solo")return "個人戦：1位8pt 〜 8位1pt";
-    if(mode==="team")return "チーム戦：卓ごとに2チームが対戦。試合ごとに対戦カード・メンバー変更可／チーム合計ptで通算順位";
-    return "ダブルアップ：卓に4チーム(2人)。試合ごとに対戦カード・メンバー変更可／1位8・2位6・3位4・4位2pt（両者に付与）";
-  }
-
-  function renderPool(s){
-    const pool=$("#pool");pool.innerHTML="";
-    if(!s.roster.length){pool.appendChild(el("div","pool-empty","名前を追加するとここにPOPが出ます"));return;}
-    const roster=rosterTab&&s.mode!=="solo";
-    const placed=new Set();
-    if(roster){
-      const src=s.mode==="team"?(s.teams||[]):(s.pairs||[]);
-      src.forEach(g=>(g.members||[]).forEach(id=>id&&placed.add(id)));
-    }else{
-      s.matches[curMatch]?.tables.forEach(tb=>tb.seats.forEach(id=>id&&placed.add(id)));
-    }
-    s.roster.forEach(p=>{
-      const present=roster?true:C.isPresent(s,curMatch,p.id);
-      const c=el("div","chip"+(roster?"":" has-check")+(placed.has(p.id)?" placed":"")+(selectedChip===p.id?" sel":"")+(!present?" absent":""));
-      c.draggable=true;c.dataset.pid=p.id;
-      if(!roster){
-        const chk=el("input","chip-check");chk.type="checkbox";chk.checked=present;
-        chk.title="この試合に参加";
-        chk.onclick=ev=>ev.stopPropagation();
-        chk.onchange=ev=>{ev.stopPropagation();store.setPresent(curMatch,p.id,chk.checked);};
-        c.appendChild(chk);
-      }
-      if(p.discordAvatar){const im=avImg(p.discordAvatar,"");if(im){im.className="chip-av";c.classList.add("has-av");c.appendChild(im);}}
-      c.appendChild(el("span","nm",p.name));
-      const x=el("span","x","×");
-      x.onclick=ev=>{ev.stopPropagation();if(confirm(`「${p.name}」を選手から削除しますか？`))store.removePlayer(p.id);};
-      c.appendChild(x);
-      c.onclick=()=>{selectedChip=(selectedChip===p.id)?null:p.id;renderPool(s);};
-      c.addEventListener("dragstart",e=>{c.classList.add("dragging");e.dataTransfer.setData("text/plain",JSON.stringify({pid:p.id,from:"pool"}));});
-      c.addEventListener("dragend",()=>c.classList.remove("dragging"));
-      pool.appendChild(c);
+  } catch(e){}
+  if (signedIn){
+    const go = document.getElementById("goBtn");
+    if (go){ go.href = "board.html"; go.textContent = "ボードへ"; }
+    document.querySelectorAll('a.btn[href="login.html"]').forEach(a => {
+      a.href = "board.html";
+      a.textContent = who ? (who + " としてボードへ") : "ボードへ";
     });
   }
-
-  function renderMatchSel(s){
-    const w=$("#matchSel");w.innerHTML="";
-    if(s.mode!=="solo"){
-      const rb=el("button","mtab mtab-roster"+(rosterTab?" on":""),"🧩 チーム組");
-      rb.title="各チームの名前と既定メンバーを設定（本番で卓にチームを選ぶと引き継がれます）";
-      rb.onclick=()=>{rosterTab=true;selectedChip=null;render(s);};
-      w.appendChild(rb);
-    }
-    for(let m=0;m<s.matchCount;m++){
-      const b=el("button","mtab"+(!rosterTab&&m===curMatch?" on":""),"第"+(m+1)+"試合");
-      b.onclick=()=>{rosterTab=false;curMatch=m;render(s);};w.appendChild(b);
-    }
-  }
-
-  /* ---- 参加者カウント＋自動組卓（全モード）---- */
-  function renderAssignBar(s){
-    const bar=$("#assignBar");bar.innerHTML="";
-    const panel=el("div","panel assignbar");
-    const cnt=C.presentList(s,curMatch).length, cap=s.tableCount*8;
-    const info=el("div","assign-info");
-    const unit=s.mode==="team"?"（4人×2＝8名/卓）":s.mode==="doubleup"?"（2人×4＝8名/卓）":"";
-    info.innerHTML=`<span class="assign-h">第${curMatch+1}試合の参加者</span><b class="num">${cnt}</b>名 ／ 卓数${s.tableCount}（最大${cap}名）<span class="muted" style="font-size:12px">${unit}</span>`;
-    panel.appendChild(info);
-
-    const acts=el("div","assign-acts");
-    const allOn=el("button","btn sm","全員 参加");
-    allOn.onclick=()=>store.setAllPresent(curMatch,true);
-    const allOff=el("button","btn sm","全員 外す");
-    allOff.onclick=()=>{if(confirm(`第${curMatch+1}試合の参加者を全員外しますか？（この試合の配置もクリアされます）`))store.setAllPresent(curMatch,false);};
-    const rnd=el("button","btn grad sm","① ランダム組卓");
-    rnd.onclick=()=>doAutoAssign("random");
-    const pts=el("button","btn sm","② pt近い順で組卓");
-    if(curMatch===0){pts.disabled=true;pts.title="2試合目以降で使えます（前試合までの累計ptを使用）";}
-    else{pts.title="直前までの累計ptが近い人を同卓に";pts.onclick=()=>doAutoAssign("points");}
-    const clr=el("button","btn sm","配置クリア");
-    clr.onclick=()=>{if(confirm(`第${curMatch+1}試合の配置をクリアしますか？`))store.clearMatchSeats(curMatch);};
-    acts.append(allOn,allOff,rnd,pts,clr);
-
-    // チーム戦/ダブルアップ：チーム組の反映＋対戦カードのシャッフル
-    if(s.mode!=="solo"){
-      const refl=el("button","btn sm","🧩 チーム組を反映");
-      refl.title="この試合の各卓に、割り当たっているチームの既定メンバー（チーム組）を流し込みます";
-      refl.onclick=()=>{
-        if(s.matches[curMatch].tables.some(tb=>tb.seats.some(Boolean))&&!confirm(`第${curMatch+1}試合の配置を、チーム組の既定編成で上書きしますか？`))return;
-        store.applyRosterToMatch(curMatch);toast("チーム組の編成を反映しました");
-      };
-      const shuf=el("button","btn sm","🔀 対戦カードをシャッフル");
-      shuf.title="この試合の各卓に座るチームをランダムに組み替えます（既定メンバーも引き継ぎます）";
-      shuf.onclick=()=>{store.shuffleMatchups(curMatch);toast("この試合の対戦カードを組み替えました");};
-      acts.append(refl,shuf);
-    }
-    panel.appendChild(acts);
-    bar.appendChild(panel);
-  }
-
-  function doAutoAssign(method){
-    const s=store.state;
-    if(C.presentList(s,curMatch).length===0){toast("参加者が0名です（POPのチェックをオンに）");return;}
-    const filled=s.matches[curMatch].tables.some(tb=>tb.seats.some(Boolean));
-    if(filled&&!confirm(`第${curMatch+1}試合は既に配置があります。組み直しますか？`))return;
-    const r=store.autoAssign(curMatch,method);
-    if(!r){toast("自動組卓に失敗しました");return;}
-    if(r.dropped>0)toast(`${r.assigned}名を配置（満員のため${r.dropped}名は未配置・卓数を増やしてください）`);
-    else toast(`${r.assigned}名を${method==="points"?"pt近い順":"ランダム"}で配置しました`);
-  }
-
-  /* ======== 「チーム組」タブ：チーム名＋既定メンバーの編集 ======== */
-  function renderRosterBar(s){
-    const bar=$("#assignBar");bar.innerHTML="";
-    const panel=el("div","panel assignbar");
-    const info=el("div","assign-info");
-    const cnt=(s.mode==="team")?(s.teams||[]).length:(s.pairs||[]).length;
-    const size=(s.mode==="team")?4:2;
-    const list=(s.mode==="team")?(s.teams||[]):(s.pairs||[]);
-    const actCnt=list.filter(g=>C.rosterActive(g)).length;
-    info.innerHTML=`<span class="assign-h">🧩 チーム組</span><b class="num">${actCnt}</b>/${cnt}チーム参加（各${size}名）。<span class="muted" style="font-size:12px">名前の左の☑で参加チームを選択。本番は各試合で卓のチームを選ぶとこの編成が引き継がれます（試合ごとに入替も可）</span>`;
-    panel.appendChild(info);
-    const acts=el("div","assign-acts");
-    const rnd=el("button","btn grad sm","🎲 ランダムでチーム分け");
-    rnd.title="ロスターの選手をシャッフルして、参加チームの既定メンバーへ割り当てます";
-    rnd.onclick=()=>{
-      if(!s.roster.length){toast("選手がいません（先にPOPを追加）");return;}
-      if(list.some(g=>(g.members||[]).some(Boolean))&&!confirm("現在のチーム編成を破棄して、ランダムに組み直しますか？"))return;
-      store.shuffleRosterTeams();toast("参加チームへランダム分けしました");
-    };
-    const allOn=el("button","btn sm","全チーム 参加");
-    allOn.title="すべてのチームを参加にします";
-    allOn.onclick=()=>store.setAllRosterActive(true);
-    const allOff=el("button","btn sm","全チーム 外す");
-    allOff.title="すべてのチームを参加外にします";
-    allOff.onclick=()=>{ if(confirm("すべてのチームを参加外にしますか？"))store.setAllRosterActive(false); };
-    const clr=el("button","btn sm","全クリア");
-    clr.title="すべてのチームの既定メンバーを空にします";
-    clr.onclick=()=>{ if(confirm("すべてのチームの既定メンバーをクリアしますか？"))store.clearRosterTeams(); };
-    const goMatch=el("button","btn sm","第1試合へ →");
-    goMatch.onclick=()=>{rosterTab=false;curMatch=0;render(s);};
-    acts.append(rnd,allOn,allOff,clr,goMatch);
-    panel.appendChild(acts);
-    bar.appendChild(panel);
-  }
-
-  function renderRosterEditor(s){
-    const wrap=$("#tables");wrap.innerHTML="";
-    const isTeam=s.mode==="team";
-    const list=isTeam?(s.teams||[]):(s.pairs||[]);
-    const size=isTeam?4:2;
-    list.forEach((g,i)=>{
-      const tableIdx=isTeam?Math.floor(i/2):Math.floor(i/4);
-      const active=C.rosterActive(g);
-      const card=el("div","table"+(active?"":" inactive"));
-      const h=el("div","table-h");
-      h.appendChild(el("span","thx",String(i+1)));
-      const chk=el("input","team-check");chk.type="checkbox";chk.checked=active;
-      chk.title="このチームを大会に参加させる（外すとランダム分け・チーム組反映・シャッフルの対象外）";
-      chk.onchange=()=>{ isTeam?store.setTeamActive(g.id,chk.checked):store.setPairActive(g.id,chk.checked); };
-      h.appendChild(chk);
-      const nameInp=el("input");nameInp.value=g.name;
-      nameInp.style.cssText="font:inherit;font-weight:800;font-size:15px;border:none;background:transparent;flex:1;min-width:0;padding:0;color:inherit";
-      nameInp.title="チーム名";
-      nameInp.onchange=()=>{ isTeam?store.setTeamName(g.id,nameInp.value):store.setPairName(g.id,nameInp.value); };
-      h.appendChild(nameInp);
-      if(!active)h.appendChild(el("span","rtag","参加外"));
-      h.appendChild(el("span","cnt","既定卓"+(tableIdx+1)));
-      card.appendChild(h);
-      const grp=el("div","grp");
-      const seats=el("div","seats");
-      for(let k=0;k<size;k++)seats.appendChild(makeRosterSeat(s,isTeam,g,k));
-      grp.appendChild(seats);card.appendChild(grp);
-      wrap.appendChild(card);
-    });
-  }
-
-  // チーム組の1席（既定メンバー編集用）
-  function makeRosterSeat(s,isTeam,g,k){
-    const pid=(g.members||[])[k]||null;
-    const set=(playerId)=> isTeam?store.setTeamMember(g.id,k,playerId):store.setPairMember(g.id,k,playerId);
-    const seat=el("div","seat "+(pid?"filled":"empty"));seat.dataset.seat=k;
-    seat.appendChild(el("span","sn",String(k+1)));
-    if(pid){const a=avImg(C.avatarOf(s,pid),"sm");if(a)seat.appendChild(a);}
-    seat.appendChild(el("span","nm",pid?C.nameOf(s,pid):"空き"));
-    if(pid){const rm=el("span","rm","×");rm.onclick=e=>{e.stopPropagation();set(null);};seat.appendChild(rm);}
-    seat.onclick=()=>{
-      if(selectedChip){set(selectedChip);selectedChip=null;}
-      else if(pid){selectedChip=pid;renderPool(s);}
-    };
-    seat.addEventListener("dragover",e=>{e.preventDefault();seat.classList.add("over");});
-    seat.addEventListener("dragleave",()=>seat.classList.remove("over"));
-    seat.addEventListener("drop",e=>{e.preventDefault();seat.classList.remove("over");
-      let d;try{d=JSON.parse(e.dataTransfer.getData("text/plain"));}catch(_){return;}
-      if(d&&d.pid)set(d.pid);});
-    if(pid){seat.draggable=true;seat.addEventListener("dragstart",e=>e.dataTransfer.setData("text/plain",JSON.stringify({pid,from:"roster"})));}
-    return seat;
-  }
-
-  function renderTables(s){
-    const wrap=$("#tables");wrap.innerHTML="";
-    for(let t=0;t<s.tableCount;t++){
-      const tb=s.matches[curMatch].tables[t];
-      const card=el("div","table");
-      const h=el("div","table-h");
-      h.appendChild(el("span","thx",String(t+1)));
-      h.appendChild(el("h3","","卓 "+(t+1)));
-      h.appendChild(el("span","cnt",tb.seats.filter(Boolean).length+"/8"));
-      card.appendChild(h);
-      if(s.mode==="team"){
-        card.appendChild(teamSideGroup(s,t,0));
-        card.appendChild(el("div","grp-vs","VS"));
-        card.appendChild(teamSideGroup(s,t,1));
-      }else if(s.mode==="doubleup"){
-        for(let g=0;g<4;g++)card.appendChild(pairGroup(s,t,g));
-      }else{
-        card.appendChild(seatGroup(s,t,0,8));
-      }
-      wrap.appendChild(card);
-    }
-  }
-
-  /* ---- 1席分のDOMを生成（全モード共通・curMatch基準）---- */
-  function makeSeat(s,tableIdx,i){
-    const tb=s.matches[curMatch].tables[tableIdx];
-    const pid=tb.seats[i];
-    const seat=el("div","seat "+(pid?"filled":"empty"));seat.dataset.seat=i;
-    seat.appendChild(el("span","sn",String(i+1)));
-    if(pid){const a=avImg(C.avatarOf(s,pid),"sm");if(a)seat.appendChild(a);}
-    seat.appendChild(el("span","nm",pid?C.nameOf(s,pid):"空席"));
-    if(pid){const rm=el("span","rm","×");rm.onclick=e=>{e.stopPropagation();store.clearSeat(curMatch,tableIdx,i);};seat.appendChild(rm);}
-    seat.onclick=()=>{
-      if(selectedChip){store.assignSeat(curMatch,tableIdx,i,selectedChip);selectedChip=null;}
-      else if(pid){selectedChip=pid;renderPool(s);}
-    };
-    seat.addEventListener("dragover",e=>{e.preventDefault();seat.classList.add("over");});
-    seat.addEventListener("dragleave",()=>seat.classList.remove("over"));
-    seat.addEventListener("drop",e=>{e.preventDefault();seat.classList.remove("over");
-      let d;try{d=JSON.parse(e.dataTransfer.getData("text/plain"));}catch(_){return;}
-      if(d&&d.pid)store.assignSeat(curMatch,tableIdx,i,d.pid);});
-    if(pid){seat.draggable=true;seat.addEventListener("dragstart",e=>e.dataTransfer.setData("text/plain",JSON.stringify({pid,from:"seat"})));}
-    return seat;
-  }
-
-  /* ---- 個人戦：連続席グループ ---- */
-  function seatGroup(s,tableIdx,from,to){
-    const g=el("div","grp");
-    const seats=el("div","seats");
-    for(let i=from;i<to;i++)seats.appendChild(makeSeat(s,tableIdx,i));
-    g.appendChild(seats);return g;
-  }
-
-  /* ---- チーム戦：卓のサイド（0=席0-3 / 1=席4-7）＋対戦チームセレクタ ---- */
-  function teamSideGroup(s,tableIdx,side){
-    const tb=s.matches[curMatch].tables[tableIdx];
-    const g=el("div","grp grp-team");
-    const head=el("div","grp-select"+(side===1?" t2":""));
-    const sel=el("select","teamsel");
-    (s.teams||[]).forEach(tm=>{const o=el("option","",tm.name+(C.rosterActive(tm)?"":"（参加外）"));o.value=tm.id;if((tb.teamSlots||[])[side]===tm.id)o.selected=true;sel.appendChild(o);});
-    sel.title="この試合にこのサイドで対戦するチーム";
-    sel.onchange=()=>store.setMatchTeamSlot(curMatch,tableIdx,side,sel.value);
-    head.appendChild(sel);g.appendChild(head);
-    const seats=el("div","seats");
-    for(let k=0;k<4;k++)seats.appendChild(makeSeat(s,tableIdx,side*4+k));
-    g.appendChild(seats);return g;
-  }
-
-  /* ---- ダブルアップ：卓のグループ（g=席 g*2,g*2+1）＋対戦チームセレクタ ---- */
-  function pairGroup(s,tableIdx,gi){
-    const tb=s.matches[curMatch].tables[tableIdx];
-    const g=el("div","grp grp-pair");
-    const head=el("div","grp-select");
-    const sel=el("select","teamsel");
-    (s.pairs||[]).forEach(pr=>{const o=el("option","",pr.name+(C.rosterActive(pr)?"":"（参加外）"));o.value=pr.id;if((tb.pairSlots||[])[gi]===pr.id)o.selected=true;sel.appendChild(o);});
-    sel.title="この試合にこの枠で対戦するチーム（2人組）";
-    sel.onchange=()=>store.setMatchPairSlot(curMatch,tableIdx,gi,sel.value);
-    head.appendChild(sel);g.appendChild(head);
-    const seats=el("div","seats");
-    for(let k=0;k<2;k++)seats.appendChild(makeSeat(s,tableIdx,gi*2+k));
-    g.appendChild(seats);return g;
-  }
-
-  /* ---- results ---- */
-  function renderResults(s){
-    const st=$("#resSubtabs");st.innerHTML="";
-    const ov=el("button","subtab"+(curResMatch==="overall"?" on":""),"全体順位");
-    ov.onclick=()=>{curResMatch="overall";renderResults(s);};st.appendChild(ov);
-    for(let m=0;m<s.matchCount;m++){
-      const b=el("button","subtab"+(curResMatch===String(m)?" on":""),"第"+(m+1)+"試合");
-      b.onclick=()=>{curResMatch=String(m);renderResults(s);};st.appendChild(b);
-    }
-    const body=$("#resBody");body.innerHTML="";
-    if(curResMatch==="overall")body.appendChild(overallView(s));
-    else body.appendChild(matchView(s,+curResMatch));
-  }
-
-  function overallView(s){
-    if(s.mode==="team")return groupOverallView(s,C.teamOverall(s),"チーム");
-    if(s.mode==="doubleup")return groupOverallView(s,C.pairOverall(s),"チーム");
-    // solo
-    const card=el("div","card");card.appendChild(el("h3","","全体順位（個人累計pt）"));
-    const rows=C.overallStandings(s);
-    if(!rows.length){card.appendChild(el("div","muted","まだ結果がありません"));return card;}
-    const tbl=el("table","rtable");
-    tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th class='c'>試合数</th><th class='r'>合計pt</th></tr></thead>";
-    colg(tbl,["64px",null,"76px","96px"]);
-    const tb=el("tbody");
-    rows.forEach((r,i)=>{
-      const tr=el("tr");
-      const rc=el("td","c");rc.appendChild(rankHex(i+1));tr.appendChild(rc);
-      const nc=el("td","nm-cell");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
-      tr.appendChild(el("td","c num",String(r.games)));
-      tr.appendChild(el("td","r num pts",String(r.points)));
-      tb.appendChild(tr);
-    });
-    tbl.appendChild(tb);card.appendChild(tbl);return card;
-  }
-
-  /* ---- チーム/ペア 通算順位（IDで通算・メンバーは全試合の延べ）---- */
-  function groupOverallView(s,list,unit){
-    const card=el("div","card");card.appendChild(el("h3","",unit+"順位（全試合 通算）"));
-    if(!list.length){card.appendChild(el("div","muted","まだ結果がありません"));return card;}
-    const tbl=el("table","rtable");
-    tbl.innerHTML=`<thead><tr><th>順位</th><th>${unit}</th><th class='c'>試合数</th><th class='r'>合計pt</th></tr></thead>`;
-    colg(tbl,["64px",null,"76px","96px"]);
-    const tb=el("tbody");
-    list.forEach((r,i)=>{
-      const tr=el("tr");
-      const rc=el("td","c");rc.appendChild(rankHex(i+1));tr.appendChild(rc);
-      const nc=el("td","nm-cell");
-      const wrapd=el("div");wrapd.style.cssText="display:flex;flex-direction:column;gap:3px";
-      wrapd.appendChild(el("strong","",r.name));
-      if(r.members&&r.members.length){
-        const ml=el("span","memberline");
-        r.members.forEach(m=>{const chip=el("span","memberchip");const a=avImg(m.avatar,"sm");if(a)chip.appendChild(a);chip.appendChild(el("span","",m.name));ml.appendChild(chip);});
-        wrapd.appendChild(ml);
-      }
-      nc.appendChild(wrapd);tr.appendChild(nc);
-      tr.appendChild(el("td","c num",String(r.games)));
-      tr.appendChild(el("td","r num pts",String(r.points)));
-      tb.appendChild(tr);
-    });
-    tbl.appendChild(tb);card.appendChild(tbl);return card;
-  }
-
-  function matchView(s,mi){
-    const frag=document.createDocumentFragment();
-    for(let t=0;t<s.tableCount;t++){
-      const card=el("div","card");
-      const h=el("h3");h.appendChild(document.createTextNode("第"+(mi+1)+"試合 ・ 卓"+(t+1)));
-      const fb=el("button","btn grad sm","この卓を自動取得");fb.style.marginLeft="auto";
-      fb.onclick=()=>fetchTable(mi,t);h.appendChild(fb);
-      card.appendChild(h);
-      const st=C.tableStandings(s,mi,t);
-      if(s.mode==="solo")card.appendChild(soloTable(s,mi,t,st));
-      else if(s.mode==="team")card.appendChild(teamTable(s,mi,t,st));
-      else card.appendChild(doubleTable(s,mi,t,st));
-      frag.appendChild(card);
-    }
-    return frag;
-  }
-
-  function soloTable(s,mi,ti,st){
-    if(!st.rows.length)return el("div","muted","この卓に選手がいません");
-    const tbl=el("table","rtable");
-    tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th class='r'>pt</th></tr></thead>";
-    colg(tbl,["64px",null,"96px"]);
-    const tb=el("tbody");
-    st.rows.forEach(r=>{
-      const tr=el("tr");
-      const rc=el("td","c");rc.appendChild(rankInput(mi,ti,r.pid,r.rank,8));tr.appendChild(rc);
-      const nc=el("td","nm-cell");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
-      tr.appendChild(el("td","r num pts",String(r.points)));
-      tb.appendChild(tr);
-    });
-    tbl.appendChild(tb);return tbl;
-  }
-
-  function teamTable(s,mi,ti,st){
-    const wrap=el("div");
-    st.teams.forEach((tm,idx)=>{
-      const win=st.teams.length>1&&idx===0&&tm.total>st.teams[1].total;
-      const block=el("div","teamblock"+(win?" win":""));
-      const head=el("h4");head.appendChild(el("span","",tm.name));
-      const right=el("span","");right.innerHTML=`<span class="pts num">${tm.total}</span> pt`;
-      if(win)right.appendChild(el("span","winner","WIN"));
-      head.appendChild(right);block.appendChild(head);
-      const tbl=el("table","rtable");
-      tbl.innerHTML="<thead><tr><th>順位</th><th>選手</th><th class='r'>pt</th></tr></thead>";
-      colg(tbl,["64px",null,"96px"]);
-      const tb=el("tbody");
-      tm.members.forEach(r=>{
-        const tr=el("tr");
-        const rc=el("td","c");rc.appendChild(rankInput(mi,ti,r.pid,r.rank,8));tr.appendChild(rc);
-        const nc=el("td","nm-cell");nc.appendChild(nameWithAv(s,r.pid,r.name));tr.appendChild(nc);
-        tr.appendChild(el("td","r num pts",String(r.points)));
-        tb.appendChild(tr);
-      });
-      tbl.appendChild(tb);block.appendChild(tbl);wrap.appendChild(block);
-    });
-    return wrap;
-  }
-
-  function doubleTable(s,mi,ti,st){
-    if(!st.pairs.length)return el("div","muted","この卓にペアがいません");
-    const tbl=el("table","rtable");
-    tbl.innerHTML="<thead><tr><th>順位</th><th>ペア</th><th class='r'>pt</th></tr></thead>";
-    colg(tbl,["64px",null,"96px"]);
-    const tb=el("tbody");
-    st.pairs.forEach(p=>{
-      const tr=el("tr");
-      const rc=el("td","c");
-      const inp=el("input","rinput num");inp.type="number";inp.min=1;inp.max=4;inp.value=p.rank||"";inp.placeholder="–";
-      inp.onchange=()=>p.members.forEach(m=>store.setPlacement(mi,ti,m.pid,inp.value));
-      rc.appendChild(inp);tr.appendChild(rc);
-      const nc=el("td","nm-cell");
-      const wrap=el("div");wrap.style.cssText="display:flex;flex-direction:column;gap:2px";
-      wrap.appendChild(el("strong","",p.name));
-      const ml=el("span","memberline");
-      p.members.forEach(m=>{const chip=el("span","memberchip");const a=avImg(C.avatarOf(s,m.pid),"sm");if(a)chip.appendChild(a);chip.appendChild(el("span","",m.name));ml.appendChild(chip);});
-      wrap.appendChild(ml);nc.appendChild(wrap);tr.appendChild(nc);
-      tr.appendChild(el("td","r num pts",String(p.points)));
-      tb.appendChild(tr);
-    });
-    tbl.appendChild(tb);return tbl;
-  }
-
-  function rankInput(mi,ti,pid,rank,max){
-    const inp=el("input","rinput num");inp.type="number";inp.min=1;inp.max=max||8;inp.value=rank||"";inp.placeholder="–";
-    inp.onchange=()=>store.setPlacement(mi,ti,pid,inp.value);return inp;
-  }
-  function rankHex(n){return el("span","rankhex"+(n<=3?(" r"+n):""),String(n));}
-
 })();
 </script>
 </body>

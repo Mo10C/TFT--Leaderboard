@@ -1251,7 +1251,7 @@
 
   /* ---- 公開 ---- */
   window.LBCore = {
-    VERSION: "cup-1.0",           // 各ページはこれを見て core.js が古くないか判定する
+    VERSION: "cup-1.2",           // 各ページはこれを見て core.js が古くないか判定する
     SEATS_PER_TABLE,
     pointsFor, makeStore,
     playerById, nameOf, avatarOf,

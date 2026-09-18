@@ -1,93 +1,86 @@
 /* =============================================================
-   ui.css — クラウドハッシュテイル校 TOOLS 共通スタイル
-   home.html / boards.html / editor.html / schedule.html / members.html / lp.html
+   ui.css — TFT リーダーボード 共通スタイル
 
-   配色はキービジュアル準拠:
-     空       … 水彩の淡い青と白い雲
-     ロゴ     … ゴールド〜オレンジ（太い縁取り・POP）
-     制服     … 濃紺グレー（文字色の基準）
-     ハッシュテイル … 葉の緑 ＋ ミントの尾
+   色は今までと同じものを使っています（金〜橙のアクセント、空の青、
+   濃紺の文字色）。変えたのは「使い方」のほうです。
+
+     ・文字の大きさと太さに段差をつけた（前は何でも太字で平坦だった）
+     ・枠線を細く薄く、影は浮いているものにだけ（前は全部に枠＋影）
+     ・余白を 4px の倍数にそろえた（前は 6/7/9/11/13px がばらばら）
+     ・角丸を「面は大きく・部品は小さく」に統一
+     ・アイコンを絵文字から線画（SVG）に
    ============================================================= */
+
 :root{
-  /* 背景・面 */
-  --bg:#DCEDF9;          /* 空の淡い水色 */
+  /* ---- 色（今までと同じ）---- */
+  --bg:#DCEDF9;
   --bg-2:#C2E0F3;
-  --surface:#FFFFFF;     /* 雲の白 */
+  --surface:#FFFFFF;
   --surface-2:#F2F8FC;
   --border:#D8E8F2;
   --border-strong:#BBD7E8;
 
-  /* 文字 */
-  --ink:#23384D;         /* 制服の濃紺 */
+  --ink:#23384D;
   --muted:#6D8699;
 
-  /* アクセント */
-  --accent:#EFA317;      /* ロゴのゴールド */
+  --accent:#EFA317;
   --accent-deep:#D3860A;
-  --accent-2:#2E9BC9;    /* 空の青 */
+  --accent-2:#2E9BC9;
   --accent-2-deep:#1E7FAA;
 
-  /* タイル用の色（管理コンソールの「色」プルダウンと対応） */
   --gold:#EFA317;
   --sky:#2E9BC9;
-  --leaf:#85A856;        /* ハッシュテイルの背景緑 */
-  --mint:#37BFA8;        /* ハッシュテイルの尾 */
-  --coral:#EE7A63;       /* ピンクの子 */
-  --navy:#4A5A73;        /* 制服 */
+  --leaf:#85A856;
+  --mint:#37BFA8;
+  --coral:#EE7A63;
+  --navy:#4A5A73;
 
-  /* 状態色 */
   --ok:#5F9E3C;
   --warn:#EFA317;
   --danger:#DF5B4C;
-  --cloud-1:rgba(255,255,255,.78);--cloud-2:rgba(255,255,255,.62);
-  --cloud-3:rgba(255,255,255,.46);--cloud-4:rgba(255,255,255,.36);
 
-  /* 旧名の互換（既存CSSが var(--pink) / var(--cyan) を参照しているため） */
+  /* 旧名の互換（既存のCSSが参照しているため残す） */
   --pink:var(--accent);
   --pink-deep:var(--accent-deep);
+  --pink-soft:#F7D9A0;
   --cyan:var(--accent-2);
   --cyan-deep:var(--accent-2-deep);
+  --cyan-soft:#BFE4F3;
   --violet:var(--leaf);
+  --hexline:rgba(60,120,170,.16);
 
-  --grad:linear-gradient(135deg,#F5B731,#E97E2C);          /* ロゴのゴールド→オレンジ */
+  --grad:linear-gradient(135deg,#F5B731,#E97E2C);
   --grad-sky:linear-gradient(135deg,#5FC2E8,#2E9BC9);
 
-  --shadow:0 16px 34px -20px rgba(35,70,105,.35);
-  --shadow-soft:0 8px 20px -14px rgba(35,70,105,.30);
-  --shadow-pop:0 12px 26px -14px rgba(35,70,105,.32);
+  /* ---- 線 ---- */
+  /* 面の区切りは「細くて薄い線」。太い枠は使わない。 */
+  --hairline:color-mix(in srgb,var(--ink) 9%,transparent);
+  --hairline-2:color-mix(in srgb,var(--ink) 15%,transparent);
+  /* 面の上辺に入れる1pxの明るい線。ガラスっぽい立体感が出る。 */
+  --edge:rgba(255,255,255,.72);
+
+  /* ---- 影（浮いているものにだけ）---- */
+  --e1:0 1px 2px rgba(35,70,105,.05);
+  --e2:0 1px 2px rgba(35,70,105,.05), 0 8px 20px -14px rgba(35,70,105,.28);
+  --e3:0 2px 4px rgba(35,70,105,.06), 0 18px 38px -22px rgba(35,70,105,.42);
+  --e-pop:0 2px 4px rgba(35,70,105,.05), 0 14px 30px -20px rgba(35,70,105,.40);
+  /* 旧名 */
+  --shadow:var(--e3);
+  --shadow-soft:var(--e2);
+  --shadow-pop:var(--e-pop);
+
+  /* ---- 角丸 ---- */
+  --r-sm:9px;    /* チップ・小さなタグ */
+  --r-md:12px;   /* ボタン・入力欄 */
+  --r-lg:18px;   /* 小さめの面 */
+  --r-xl:22px;   /* カード */
+  --r-full:999px;
+
+  /* ---- 動き ---- */
+  --ease:cubic-bezier(.2,.9,.3,1);
+  --t:.16s var(--ease);
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#111C29;        /* 夜の空 */
-    --bg-2:#0C141E;
-    --surface:#1A2735;
-    --surface-2:#152232;
-    --border:#2A3B4D;
-    --border-strong:#3B5064;
-    --ink:#E8F2F9;
-    --muted:#93A9BC;
-    --accent:#F7BE47;
-    --accent-deep:#F0A317;
-    --accent-2:#5CBEE4;
-    --accent-2-deep:#8FD6F0;
-    --gold:#F7BE47;
-    --sky:#5CBEE4;
-    --leaf:#9BC96C;
-    --mint:#55D8C0;
-    --coral:#F49482;
-    --navy:#8FA3BE;
-    --ok:#7BC456;
-    --warn:#F7BE47;
-    --danger:#F27A6C;
-  --cloud-1:rgba(92,190,228,.10);--cloud-2:rgba(92,190,228,.07);
-  --cloud-3:rgba(150,125,210,.06);--cloud-4:rgba(92,190,228,.05);
-    --grad:linear-gradient(135deg,#F7BE47,#EE8A3C);
-    --grad-sky:linear-gradient(135deg,#5CBEE4,#3A8FBE);
-    --shadow:0 18px 38px -20px rgba(0,0,0,.72);
-    --shadow-soft:0 10px 24px -16px rgba(0,0,0,.62);
-    --shadow-pop:0 14px 30px -16px rgba(0,0,0,.68);
-  }
-}
+
 :root[data-theme="dark"]{
   --bg:#111C29;
   --bg-2:#0C141E;
@@ -95,206 +88,279 @@
   --surface-2:#152232;
   --border:#2A3B4D;
   --border-strong:#3B5064;
+
   --ink:#E8F2F9;
   --muted:#93A9BC;
+
   --accent:#F7BE47;
   --accent-deep:#F0A317;
   --accent-2:#5CBEE4;
   --accent-2-deep:#8FD6F0;
+
   --gold:#F7BE47;
   --sky:#5CBEE4;
   --leaf:#9BC96C;
   --mint:#55D8C0;
   --coral:#F49482;
   --navy:#8FA3BE;
+
   --ok:#7BC456;
   --warn:#F7BE47;
   --danger:#F27A6C;
-  --cloud-1:rgba(92,190,228,.10);--cloud-2:rgba(92,190,228,.07);
-  --cloud-3:rgba(150,125,210,.06);--cloud-4:rgba(92,190,228,.05);
+
+  --pink-soft:#6B5225;
+  --cyan-soft:#1E4C63;
+  --hexline:rgba(140,190,230,.14);
+
   --grad:linear-gradient(135deg,#F7BE47,#EE8A3C);
-  --grad-sky:linear-gradient(135deg,#5CBEE4,#3A8FBE);
-  --shadow:0 18px 38px -20px rgba(0,0,0,.72);
-  --shadow-soft:0 10px 24px -16px rgba(0,0,0,.62);
-  --shadow-pop:0 14px 30px -16px rgba(0,0,0,.68);
+  --grad-sky:linear-gradient(135deg,#6FCBEC,#3FA6D4);
+
+  --hairline:rgba(255,255,255,.09);
+  --hairline-2:rgba(255,255,255,.16);
+  --edge:rgba(255,255,255,.07);
+
+  --e1:0 1px 2px rgba(0,0,0,.34);
+  --e2:0 1px 2px rgba(0,0,0,.34), 0 10px 24px -16px rgba(0,0,0,.72);
+  --e3:0 2px 5px rgba(0,0,0,.40), 0 22px 44px -24px rgba(0,0,0,.86);
+  --e-pop:0 2px 5px rgba(0,0,0,.36), 0 16px 34px -22px rgba(0,0,0,.80);
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
-/* 空と雲。画像を使わず、やわらかい白の塊を重ねて水彩の雲に見せる */
+
+/* 背景。前は雲のグラデーションを4枚重ねていて、ぼんやり散らかって
+   見えていた。1枚の落ち着いたグラデーション＋うっすらした六角形の
+   地紋（TFTの盤面）に変更。色は同じ。 */
 body{
-  font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
+  font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",
+              -apple-system,BlinkMacSystemFont,sans-serif;
+  font-size:14px;
+  line-height:1.7;
+  color:var(--ink);
+  min-height:100vh;
   background:
-    radial-gradient(620px 260px at 12% 8%, var(--cloud-1), transparent 70%),
-    radial-gradient(520px 220px at 78% 2%, var(--cloud-2), transparent 72%),
-    radial-gradient(760px 300px at 92% 34%, var(--cloud-3), transparent 70%),
-    radial-gradient(560px 240px at 4% 52%, var(--cloud-4), transparent 72%),
-    linear-gradient(178deg, var(--bg-2) 0%, var(--bg) 42%, var(--bg) 100%);
+    url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='56' height='97'>\
+<path d='M28 0 L56 16 L56 48 L28 64 L0 48 L0 16 Z M28 64 L56 80 L56 112 M28 64 L0 80 L0 112' \
+fill='none' stroke='%232E9BC9' stroke-opacity='0.055' stroke-width='1'/></svg>"),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 38%, var(--bg) 100%);
   background-attachment:fixed;
-  color:var(--ink);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
+  background-size:56px 97px, auto;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+:root[data-theme="dark"] body{
+  background:
+    url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='56' height='97'>\
+<path d='M28 0 L56 16 L56 48 L28 64 L0 48 L0 16 Z M28 64 L56 80 L56 112 M28 64 L0 80 L0 112' \
+fill='none' stroke='%235CBEE4' stroke-opacity='0.05' stroke-width='1'/></svg>"),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 42%, var(--bg) 100%);
+  background-attachment:fixed;
+  background-size:56px 97px, auto;
+}
+
 a{color:inherit;text-decoration:none}
-button{font-family:inherit;cursor:pointer}
-:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.num{font-family:"Space Grotesk",sans-serif;font-variant-numeric:tabular-nums}
-.wrap{max-width:1080px;margin:0 auto;padding:clamp(14px,3vw,30px) clamp(14px,3vw,36px) 84px}
+button{font-family:inherit;cursor:pointer;color:inherit;background:none;border:none}
+input,select,textarea{font-family:inherit}
+img{max-width:100%}
+
+/* 数字は等幅にそろえる（順位やptがガタつかない） */
+.num,.mono{font-family:"Space Grotesk",ui-monospace,sans-serif;font-variant-numeric:tabular-nums}
+
+.wrap{max-width:1120px;margin:0 auto;padding:clamp(16px,3vw,28px) clamp(16px,3vw,32px) 88px}
 .spacer{flex:1}
 
-/* ---- ヘッダー ---- */
-.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-.brand{display:flex;align-items:center;gap:11px}
-.brand .hex{width:42px;height:42px;background:var(--grad);flex:none;
-  clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%);
-  display:grid;place-items:center;color:#fff;font-weight:900;font-size:16px;
-  text-shadow:0 1px 2px rgba(120,60,0,.45)}
+/* =============================================================
+   文字の段差
+   前は何でも font-weight:900 で、大きさもほぼ同じだった。
+   見出し / 本文 / 補助 の3段にはっきり分ける。
+   ============================================================= */
+h1{font-size:19px;font-weight:800;letter-spacing:-.01em;line-height:1.35}
+h2{font-size:16px;font-weight:800;letter-spacing:-.005em;line-height:1.45}
+h3{font-size:14px;font-weight:800;line-height:1.5}
+.lead{font-size:13px;color:var(--muted);line-height:1.85}
+.hint{font-size:12px;color:var(--muted);line-height:1.7}
+/* 小さな見出しラベル（英字の小見出しなど） */
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted)}
 
-/* 校章（盾のエンブレム）。assets/emblem.png を使い、
-   読み込めなかったときだけ CSS で盾の形を描いて代替する。 */
-.brandmark{width:42px;height:53px;flex:none;position:relative;display:grid;place-items:center}
-.brandmark img{width:100%;height:100%;object-fit:contain;display:block;
-  filter:drop-shadow(0 2px 3px rgba(35,70,105,.28))}
-.brandmark.noimg{
-  background:var(--leaf);
-  clip-path:polygon(4% 3%,96% 3%,96% 60%,50% 97%,4% 60%);
-  box-shadow:inset 0 0 0 1.5px rgba(245,230,211,.9)}
-.brandmark.noimg::after{content:"C";color:#F5E6D3;font-weight:900;font-size:17px;
-  transform:translateY(-3px)}
-.brand h1{font-size:16.5px;font-weight:900;letter-spacing:.02em}
-.brand .sub{font-size:10.5px;color:var(--muted)}
-.badge{font-size:11px;font-weight:900;padding:4px 12px;border-radius:999px;
-  border:1.5px solid var(--border-strong);color:var(--muted);background:var(--surface)}
-.badge.admin{border-color:var(--accent);color:var(--accent-deep)}
-.badge.warn{border-color:var(--warn);color:var(--accent-deep)}
-.iconbtn{border:1.5px solid var(--border-strong);background:var(--surface);border-radius:999px;
-  padding:7px 13px;font-size:12px;font-weight:700;color:var(--muted);display:inline-block;
-  transition:border-color .12s,color .12s}
-.iconbtn:hover{border-color:var(--accent-2);color:var(--accent-2)}
+/* =============================================================
+   ヘッダー
+   ============================================================= */
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brandmark{width:38px;height:38px;flex:none;position:relative;display:grid;place-items:center;
+  border-radius:12px;overflow:hidden;box-shadow:var(--e2)}
+.brandmark img{width:100%;height:100%;object-fit:cover;display:block}
+.brandmark.noimg{background:var(--grad)}
+.brandmark.noimg::after{content:"⬢";color:#fff;font-size:17px;line-height:1}
+.brand h1{font-size:16.5px;font-weight:800;letter-spacing:-.01em}
+.brand .sub{font-size:11.5px;color:var(--muted);line-height:1.4;margin-top:1px}
 
-/* ---- 自分カード ---- */
-.mecard{display:flex;align-items:center;gap:16px;background:var(--surface);
-  border:1.5px solid var(--border);border-radius:22px;padding:18px 22px;
-  box-shadow:var(--shadow);margin-bottom:26px;flex-wrap:wrap;position:relative;overflow:hidden}
-.mecard::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--grad)}
-.mecard img{width:66px;height:66px;border-radius:999px;object-fit:cover;
-  border:3px solid var(--accent);flex:none;background:var(--surface-2)}
-.mecard .who{min-width:0;flex:1}
-.mecard .nm{font-size:19px;font-weight:900;line-height:1.3}
-.mecard .rid{font-size:11.5px;color:var(--muted)}
-.mecard .rank{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:900;
-  padding:3px 12px;border-radius:999px;border:1.5px solid;margin-top:5px}
-.roles{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
-.role-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
-  padding:3px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border-strong)}
-.role-chip .dot{width:8px;height:8px;border-radius:999px;flex:none}
+/* ヘッダーの丸ボタン。アイコンは線画（SVG）を入れる前提。 */
+.iconbtn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;
+  border-radius:var(--r-full);background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--hairline-2), var(--e1);
+  font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap;
+  transition:color var(--t),box-shadow var(--t),transform var(--t)}
+.iconbtn:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--accent-2), var(--e2)}
+.iconbtn:active{transform:translateY(1px)}
+.iconbtn svg{width:15px;height:15px;flex:none}
+.iconbtn.sq{width:34px;padding:0;justify-content:center}
 
-/* ---- POPタイル ---- */
-.pops{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:15px}
-.pop{position:relative;display:flex;flex-direction:column;gap:6px;overflow:hidden;
-  background:var(--surface);border:1.5px solid var(--border);border-radius:22px;
-  padding:22px 20px 20px;box-shadow:var(--shadow-pop);
-  transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease}
-.pop::after{content:"";position:absolute;inset:0 0 auto 0;height:5px;
-  background:var(--tint,var(--accent))}
-.pop:hover{transform:translateY(-4px);border-color:var(--tint,var(--accent));box-shadow:var(--shadow)}
-.pop .ico{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;font-size:26px;
-  background:color-mix(in srgb,var(--tint,var(--accent)) 15%,var(--surface));
-  border:1.5px solid color-mix(in srgb,var(--tint,var(--accent)) 38%,var(--border));margin-bottom:4px}
-/* 画像アイコン（校章タイプ）。枠と背景は付けず、絵柄をそのまま出す */
-.pop .ico.img{width:66px;height:66px;background:none;border:none;border-radius:0;
-  margin-bottom:2px;padding:0;overflow:visible}
-.pop .ico.img img{width:100%;height:100%;object-fit:contain;display:block;
-  filter:drop-shadow(0 6px 10px rgba(35,70,105,.18))}
-:root[data-theme="dark"] .pop .ico.img img{filter:drop-shadow(0 6px 12px rgba(0,0,0,.55))}
-.pop .pt{font-size:17px;font-weight:900;letter-spacing:.01em}
-.pop .pd{font-size:11.5px;color:var(--muted);line-height:1.55}
-.pop .meta{margin-top:8px;font-size:11px;font-weight:900;
-  color:color-mix(in srgb,var(--tint,var(--accent)) 78%,var(--ink))}
-.pop.soon{opacity:.7}
-.pop .soon-tag{position:absolute;top:15px;right:15px;font-size:9.5px;font-weight:900;
-  padding:2px 9px;border-radius:999px;border:1.5px solid var(--border-strong);
-  color:var(--muted);background:var(--surface)}
+/* 状態バッジ */
+.badge{display:inline-flex;align-items:center;gap:6px;height:25px;padding:0 11px;
+  border-radius:var(--r-full);font-size:11px;font-weight:800;letter-spacing:.02em;
+  color:var(--muted);box-shadow:inset 0 0 0 1px var(--hairline-2)}
+.badge.admin{color:var(--accent-deep);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 52%,transparent);
+  background:color-mix(in srgb,var(--accent) 9%,transparent)}
+.badge.live,.badge.ok{color:var(--ok);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 48%,transparent);
+  background:color-mix(in srgb,var(--ok) 8%,transparent)}
+.badge.warn{color:var(--accent-deep);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 52%,transparent);
+  background:color-mix(in srgb,var(--warn) 9%,transparent)}
+.badge.view{color:var(--accent-2-deep);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent-2) 48%,transparent);
+  background:color-mix(in srgb,var(--accent-2) 8%,transparent)}
+.badge .dot{width:6px;height:6px;border-radius:var(--r-full);background:currentColor;flex:none}
 
-/* ---- セクション ---- */
-.sec{margin-bottom:30px}
-.sec-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:13px}
-.sec-head h2{font-size:15.5px;font-weight:900}
-.sec-head .cnt{font-size:11px;font-weight:700;color:var(--muted)}
-.mini{border:1.5px solid var(--border-strong);background:var(--surface);border-radius:11px;
-  padding:7px 14px;font-size:12px;font-weight:700;color:var(--ink);display:inline-block;
-  transition:border-color .12s,transform .1s}
-.mini:hover{border-color:var(--accent-2)}
+/* =============================================================
+   面（カード）
+   枠線ではなく「内側1pxの線＋うっすらした影」で面を作る。
+   上辺だけ明るい線を入れて、板が置いてあるように見せる。
+   ============================================================= */
+.card{position:relative;background:var(--surface);border-radius:var(--r-xl);
+  padding:20px 22px;box-shadow:inset 0 0 0 1px var(--hairline), var(--e2);
+  margin-bottom:14px}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;border-radius:var(--r-xl) var(--r-xl) 0 0;
+  background:var(--edge);pointer-events:none}
+.card > h2{margin-bottom:6px}
+.card > h2 + .lead{margin-bottom:14px}
+.card > .lead{margin-bottom:14px}
+
+/* 中身が一覧のときは余白を詰める（行が主役なので） */
+.card.flush{padding:0;overflow:hidden}
+.card.flush > .card-head{padding:16px 20px 14px;box-shadow:inset 0 -1px 0 var(--hairline)}
+.card.flush > .card-body{padding:6px 20px 14px}
+
+/* =============================================================
+   ボタン
+   ============================================================= */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:42px;padding:0 22px;border-radius:14px;
+  font-size:14px;font-weight:800;letter-spacing:.01em;color:#fff;
+  background:var(--grad);
+  box-shadow:0 1px 2px rgba(35,70,105,.10), 0 10px 22px -12px color-mix(in srgb,var(--accent-deep) 80%,transparent);
+  transition:transform var(--t),box-shadow var(--t),filter var(--t)}
+.btn:hover{transform:translateY(-1px);filter:saturate(1.06)}
+.btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(35,70,105,.10)}
+.btn:disabled{opacity:.42;cursor:default;transform:none;filter:none;box-shadow:none}
+.btn.sec,.btn.ghost{background:var(--surface);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--hairline-2), var(--e1)}
+.btn.sec:hover,.btn.ghost:hover{box-shadow:inset 0 0 0 1px var(--accent-2), var(--e2)}
+.btn.big{height:50px;font-size:15px;border-radius:16px;width:100%}
+.btn.discord{background:#5865F2;
+  box-shadow:0 1px 2px rgba(35,70,105,.10), 0 10px 22px -12px rgba(88,101,242,.75)}
+
+/* 小さいボタン。前は枠線が太くて「フォームの部品」に見えていた。 */
+.mini{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:33px;padding:0 14px;border-radius:10px;
+  font-size:12.5px;font-weight:700;color:var(--ink);background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--hairline-2), var(--e1);
+  white-space:nowrap;transition:box-shadow var(--t),transform var(--t),color var(--t)}
+.mini:hover{box-shadow:inset 0 0 0 1px var(--accent-2), var(--e2)}
 .mini:active{transform:translateY(1px)}
-.mini.grad{background:var(--grad);color:#fff;border:none;
-  box-shadow:0 3px 0 0 color-mix(in srgb,var(--accent-deep) 75%,#000)}
-.mini.grad:active{transform:translateY(2px);box-shadow:0 1px 0 0 color-mix(in srgb,var(--accent-deep) 75%,#000)}
-.mini.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--border-strong))}
-.mini:disabled{opacity:.5;cursor:default;transform:none}
-.hint{font-size:11px;color:var(--muted)}
+.mini svg{width:14px;height:14px;flex:none}
+.mini.grad{color:#fff;background:var(--grad);
+  box-shadow:0 1px 2px rgba(35,70,105,.10), 0 8px 18px -12px color-mix(in srgb,var(--accent-deep) 80%,transparent)}
+.mini.grad:hover{filter:saturate(1.06);box-shadow:0 1px 2px rgba(35,70,105,.10), 0 10px 20px -11px color-mix(in srgb,var(--accent-deep) 85%,transparent)}
+.mini.danger{color:var(--danger);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--danger) 34%,var(--hairline-2))}
+.mini.danger:hover{box-shadow:inset 0 0 0 1px var(--danger), var(--e2)}
+.mini:disabled{opacity:.45;cursor:default;transform:none}
 
-/* ---- カードグリッド ---- */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:13px}
-.bcard{display:block;background:var(--surface);border:1.5px solid var(--border);border-radius:18px;
-  padding:15px 17px;box-shadow:var(--shadow-soft);transition:transform .12s,border-color .12s}
-.bcard:hover{transform:translateY(-3px);border-color:var(--accent-2)}
-.bcard .bt{font-size:14.5px;font-weight:900;line-height:1.4;margin-bottom:3px;word-break:break-word}
-.bcard .bid{font-size:10.5px;color:var(--muted)}
-.bcard .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--muted)}
-.bcard .meta b{color:var(--ink);font-weight:900}
-.vis{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-top:9px;border-top:1px dashed var(--border-strong)}
-.vis-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:900;
-  padding:2px 9px;border-radius:999px;border:1.5px solid var(--border-strong);color:var(--muted)}
-.vis-pill.open{border-color:color-mix(in srgb,var(--ok) 55%,var(--border-strong));color:var(--ok)}
-.vis-pill.limited{border-color:var(--accent);color:var(--accent-deep)}
-.empty{background:var(--surface);border:1.5px dashed var(--border-strong);border-radius:18px;
-  padding:26px;text-align:center;font-size:12.5px;color:var(--muted)}
+/* =============================================================
+   入力欄
+   ============================================================= */
+input[type=text],input[type=number],input[type=date],select,textarea{
+  height:40px;padding:0 13px;border-radius:var(--r-md);border:none;
+  background:var(--surface);color:var(--ink);font-size:13.5px;
+  box-shadow:inset 0 0 0 1px var(--hairline-2);
+  transition:box-shadow var(--t)}
+textarea{height:auto;padding:11px 13px;line-height:1.7;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.72}
+input:focus,select:focus,textarea:focus{outline:none;
+  box-shadow:inset 0 0 0 1.5px var(--accent-2), 0 0 0 3px color-mix(in srgb,var(--accent-2) 16%,transparent)}
+select{padding-right:30px;appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),
+                   linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 17px, calc(100% - 10px) 17px;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;
+  color:var(--ink);cursor:pointer;user-select:none}
 
-/* ---- ツール ---- */
-.tcard{display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--border);
-  border-radius:16px;padding:13px 15px;box-shadow:var(--shadow-soft);transition:border-color .12s}
-.tcard:hover{border-color:var(--accent)}
-.tcard .ico{width:40px;height:40px;border-radius:13px;background:var(--surface-2);
-  border:1.5px solid var(--border-strong);display:grid;place-items:center;font-size:20px;flex:none}
-.tcard .tt{font-size:13.5px;font-weight:900;line-height:1.35}
-.tcard .td{font-size:11px;color:var(--muted);line-height:1.45}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.row:last-child{margin-bottom:0}
+.row > label{font-size:12px;font-weight:700;color:var(--muted)}
 
-/* ---- フォーム ---- */
-.formbox{background:var(--surface);border:1.5px solid var(--border);border-radius:18px;
-  padding:16px 18px;box-shadow:var(--shadow-soft);display:none;margin-bottom:14px}
-.formbox.show{display:block}
-.frow{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
-.frow > label{font-size:11.5px;font-weight:700;color:var(--muted);min-width:78px}
-.frow input[type=text]{flex:1;min-width:180px;border:1.5px solid var(--border-strong);
-  background:var(--surface-2);color:var(--ink);border-radius:11px;padding:9px 12px;
-  font-size:13.5px;font-family:inherit}
-.frow input[type=text]:focus{outline:none;border-color:var(--accent-2);background:var(--surface)}
-.frow input.mono{font-family:"Space Grotesk",ui-monospace,monospace;font-size:12.5px}
-.radios{display:flex;gap:16px;flex-wrap:wrap}
-.radios label{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;cursor:pointer}
-.radios input{accent-color:var(--accent)}
-.rolepick{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
-.rp{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:6px 12px;
-  border-radius:999px;background:var(--surface-2);border:1.5px solid var(--border-strong);
-  cursor:pointer;user-select:none}
-.rp .dot{width:9px;height:9px;border-radius:999px;flex:none}
-.rp.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,var(--surface))}
+code{font-family:"Space Grotesk",ui-monospace,monospace;font-size:12px;
+  padding:2px 7px;border-radius:6px;background:var(--surface-2);
+  box-shadow:inset 0 0 0 1px var(--hairline);color:var(--ink)}
 
-/* ---- 準備中ページ ---- */
-.soon-wrap{max-width:620px;margin:9vh auto 0;background:var(--surface);border:1.5px solid var(--border);
-  border-radius:26px;padding:40px 32px;box-shadow:var(--shadow);text-align:center;
-  position:relative;overflow:hidden}
-.soon-wrap::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:var(--grad)}
-.soon-wrap .big{font-size:54px;line-height:1}
-.soon-wrap h2{font-size:21px;font-weight:900;margin:14px 0 10px}
-.soon-wrap p{font-size:13px;color:var(--muted);margin-bottom:8px}
-.soon-list{text-align:left;max-width:420px;margin:20px auto 24px;display:flex;flex-direction:column;gap:9px}
-.soon-item{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--muted);
-  background:var(--surface-2);border:1px solid var(--border);border-radius:13px;padding:10px 13px}
-.soon-item b{color:var(--ink);font-weight:900;font-size:12.5px}
+/* =============================================================
+   チップ（ロール・タグ）
+   ============================================================= */
+.role-chip,.rp,.chip{display:inline-flex;align-items:center;gap:6px;height:27px;padding:0 11px;
+  border-radius:var(--r-full);font-size:11.5px;font-weight:700;color:var(--muted);
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--hairline-2);
+  white-space:nowrap;transition:box-shadow var(--t),color var(--t)}
+.rp,.chip{cursor:pointer;user-select:none}
+.rp:hover,.chip:hover{color:var(--ink)}
+.rp.on,.chip.on{color:var(--accent-deep);background:color-mix(in srgb,var(--accent) 10%,var(--surface));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent)}
+.role-chip .dot,.rp .dot,.chip .dot{width:7px;height:7px;border-radius:var(--r-full);flex:none}
+.rolepick{display:flex;gap:7px;flex-wrap:wrap}
 
-#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:#fff;
-  padding:11px 22px;border-radius:999px;font-size:12.5px;font-weight:700;opacity:0;pointer-events:none;
-  transition:opacity .2s;z-index:99;max-width:88vw;text-align:center;box-shadow:var(--shadow)}
-#toast.show{opacity:.97}
+/* =============================================================
+   セクション見出し
+   ============================================================= */
+.sec{margin-bottom:26px}
+.sec-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.sec-head h2{font-size:15px;font-weight:800}
+.sec-head .cnt{font-size:12px;font-weight:600;color:var(--muted)}
 
-/* ツールカードの画像アイコン（.tcard .ico の後に置いて上書きする） */
-.tcard .ico.img{background:none;border:none;border-radius:0;padding:0}
-.tcard .ico.img img{width:100%;height:100%;object-fit:contain;display:block}
+/* =============================================================
+   トースト
+   ============================================================= */
+#toast{position:fixed;left:50%;bottom:24px;z-index:99;max-width:min(88vw,460px);
+  padding:12px 20px;border-radius:14px;
+  background:color-mix(in srgb,var(--ink) 94%,#000);color:var(--surface);
+  font-size:13px;font-weight:600;line-height:1.6;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.55);
+  opacity:0;pointer-events:none;
+  transform:translate(-50%,10px) scale(.97);
+  transition:opacity .18s var(--ease),transform .18s var(--ease)}
+#toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+:root[data-theme="dark"] #toast{background:#F2F8FC;color:#111C29}
+
+/* =============================================================
+   空っぽのとき
+   ============================================================= */
+.empty{padding:36px 20px;text-align:center;font-size:13px;color:var(--muted);line-height:1.95}
+
+/* =============================================================
+   動きを減らす設定の人には動かさない
+   ============================================================= */
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important}
+  .btn:hover,.mini:hover,.iconbtn:active{transform:none}
+}
+
+@media (max-width:620px){
+  body{font-size:13.5px}
+  .wrap{padding-bottom:64px}
+  .card{padding:17px 16px;border-radius:var(--r-lg)}
+  .card.flush > .card-head{padding:14px 16px 12px}
+  .card.flush > .card-body{padding:4px 16px 12px}
+  .brand h1{font-size:15px}
+}
