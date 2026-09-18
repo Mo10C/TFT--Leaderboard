@@ -143,6 +143,25 @@
     try { return JSON.parse(localStorage.getItem(GROUP_LS_KEY) || "{}") || {}; }
     catch (e) { return {}; }
   }
+  /* Firestore のエラーを日本語にする。
+     いちばん多いのが「ルールに tboards / tboard_index を足していない」なので、
+     その場合は何をすればいいかを本文に書く。 */
+  function fsErr(e, what) {
+    const code = String((e && (e.code || e.message)) || "");
+    if (/permission|insufficient|PERMISSION_DENIED/i.test(code)) {
+      return new Error(
+        "Firestore に拒否されました（" + COL + " / " + ICOL + " の権限がありません）。\n" +
+        "Firebase コンソール → Firestore Database → ルール に、次の2行を足して「公開」してください:\n" +
+        "  match /" + COL + "/{id}  { allow read, write: if true; }\n" +
+        "  match /" + ICOL + "/{id} { allow read, write: if true; }"
+      );
+    }
+    if (/unavailable|network|offline/i.test(code)) {
+      return new Error("Firestore につながりませんでした。通信を確認してもう一度おためしください。");
+    }
+    return new Error((what ? what + "：" : "") + (code || "不明なエラー"));
+  }
+
   const Groups = {
     normPass, hash: hashGroup, isKey: isGroupKey,
     // そのグループが既にあるか → { exists, name, createdAt }
@@ -150,8 +169,10 @@
       if (!isGroupKey(gk)) throw new Error("グループキーの形が正しくありません");
       const db = openDb();
       if (db) {
-        const snap = await db.collection(ICOL).doc("g_" + gk).get();
-        if (!snap.exists) return { exists: false, name: "", createdAt: 0 };
+        let snap;
+        try { snap = await db.collection(ICOL).doc("g_" + gk).get(); }
+        catch (e) { throw fsErr(e, "グループを読めませんでした"); }
+        if (!snap.exists) return { exists: false, name: "", createdAt: 0, ownerId: "" };
         const d = snap.data() || {};
         return { exists: true, name: d.name || "", createdAt: d.createdAt || 0, ownerId: d.ownerId || "" };
       }
@@ -167,11 +188,13 @@
       if (!isGroupKey(gk) || !me) return false;
       const db = openDb();
       if (db) {
-        const ref = db.collection(ICOL).doc("g_" + gk);
-        const snap = await ref.get();
-        const cur = snap.exists ? (snap.data() || {}) : {};
-        if (!cur.ownerId) { await ref.set({ ownerId: me }, { merge: true }); return true; }
-        return String(cur.ownerId) === me;
+        try {
+          const ref = db.collection(ICOL).doc("g_" + gk);
+          const snap = await ref.get();
+          const cur = snap.exists ? (snap.data() || {}) : {};
+          if (!cur.ownerId) { await ref.set({ ownerId: me }, { merge: true }); return true; }
+          return String(cur.ownerId) === me;
+        } catch (e) { throw fsErr(e, "主催を決められませんでした"); }
       }
       const all = localGroups();
       const g = all[gk] || (all[gk] = { name: "", createdAt: Date.now() });
@@ -190,7 +213,7 @@
       const db = openDb();
       if (db) {
         try { await db.collection(ICOL).doc("g_" + gk).set(Object.assign({ boards: {} }, rec), { merge: true }); }
-        catch (e) { throw new Error("グループを作れませんでした（" + (e.code || e.message) + "）。Firestore のルールに " + ICOL + " を追加しているか確認してください"); }
+        catch (e) { throw fsErr(e, "グループを作れませんでした"); }
       } else {
         const all = localGroups();
         all[gk] = rec;
@@ -1438,13 +1461,13 @@
 
   /* ---- 公開 ---- */
   window.LBCore = {
-    VERSION: "cup-1.4",           // 各ページはこれを見て core.js が古くないか判定する
+    VERSION: "cup-1.4.2",           // 各ページはこれを見て core.js が古くないか判定する
     SEATS_PER_TABLE,
     pointsFor, makeStore,
     playerById, nameOf, avatarOf,
     hasRole, rosterRoles, roleColorCss, fallbackRoleCatalog,
     KIND_ROLES, kindRole, kindLabel, kindOf, kindRolesOf,
-    Groups,
+    Groups, fsErr,
     isStaff, isParticipant, participants, staffRoleIds,
     isAdmin, isAdminConfigured, adminConfig,
     normVisibility, canViewBoard, visibilityLabel,

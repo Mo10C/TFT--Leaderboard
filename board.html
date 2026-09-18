@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<link rel="stylesheet" href="ui.css?v=cup14">
+<link rel="stylesheet" href="ui.css?v=cup142">
 <style>
 /* ===== 大会ボード固有のスタイル =====
    共通の部品（ヘッダー・ボタン・カード・入力欄・トースト）は ui.css。
@@ -330,7 +330,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
 <div id="toast"></div>
 
 <script src="config.js"></script>
-<script src="core.js?v=cup14"></script>
+<script src="core.js?v=cup142"></script>
 <script>
 (function(){
   const C = window.LBCore;
@@ -372,9 +372,16 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
   $("meRank").textContent = C.rankLabel(session.riot.rank);
   $("meRank").style.color = C.rankColor(session.riot.rank);
   $("logoutBtn").onclick = () => {
-    if (!confirm("ログアウトしますか？（ボード上の登録は残ります）")) return;
+    if (!confirm("ボードから出ますか？\n（合言葉・Riot ID・Discord・立場はこの端末に残るので、次はボタン1つで戻れます）")) return;
+    // ★ セッションだけ消す。ログイン画面の下書きは残すので、
+    //   合言葉から入れ直す必要はありません。
+    //   ぜんぶ消したいときは、ログイン画面の「この端末の記憶を消す」から。
+    const g = C.Groups.current();     // ★ 消す前に控える
     C.Session.clear();
-    location.href = "login.html" + (store.boardId !== "default" ? "?board="+encodeURIComponent(store.boardId) : "");
+    const qs = [];
+    if (store.boardId !== "default") qs.push("board=" + encodeURIComponent(store.boardId));
+    if (g) qs.push("g=" + encodeURIComponent(g.key));
+    location.href = "login.html" + (qs.length ? ("?" + qs.join("&")) : "");
   };
 
   /* ---- UIローカル状態 ---- */

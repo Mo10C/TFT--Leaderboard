@@ -1,6 +1,6 @@
 =========================================
  TFT リーダーボード
- cup 1.4 ― 2026-09-18
+ cup 1.4.2 ― 2026-09-18
 =========================================
 
 ログイン → 大会のリーダーボード だけの、独立した仕組みです。
@@ -107,20 +107,28 @@ Discord自動投稿 は入っていません。
 
 ■ セットアップ（3つだけ）
 
-  ① Firestore のルールに2行足す
-     Firebase コンソール → Firestore → ルール
+  ① ★★ Firestore のルールに2行足す（これを忘れると何もできません）
+     Firebase コンソール → Firestore Database → ルール
 
        rules_version = '2';
        service cloud.firestore {
          match /databases/{database}/documents {
-           match /boards/{id}        { allow read, write: if true; }   // 既存
-           match /board_index/{id}   { allow read, write: if true; }   // 既存
-           match /lboards/{id}       { allow read, write: if true; }   // ポータル版
-           match /lboard_index/{id}  { allow read, write: if true; }   // ポータル版
-           match /tboards/{id}       { allow read, write: if true; }   // ★この版
-           match /tboard_index/{id}  { allow read, write: if true; }   // ★この版
+           match /boards/{id}          { allow read, write: if true; }  // 既存
+           match /board_index/{id}     { allow read, write: if true; }  // 既存
+           match /lboards/{id}         { allow read, write: if true; }  // ポータル版
+           match /lboard_index/{id}    { allow read, write: if true; }  // ポータル版
+           match /lboard_profiles/{id} { allow read, write: if true; }  // ポータル版
+           match /tboards/{id}         { allow read, write: if true; }  // ★この版
+           match /tboard_index/{id}    { allow read, write: if true; }  // ★この版
          }
        }
+
+     書いたら必ず「公開」を押してください。押した直後から有効になります。
+
+     ⚠️ ここを足していないと、合言葉を入れたときに
+        「Missing or insufficient permissions」と出て、
+        最初のグループが作れません。
+        1.4.1 からは、この画面にルールの全文とコピーボタンが出ます。
 
   ② Discord の Redirects に、このフォルダの login.html を足す
      Discord Developer Portal → OAuth2 → Redirects
@@ -225,6 +233,37 @@ Discord自動投稿 は入っていません。
 
    文言を変えたいときは index.html を直接編集してください。
    ふつうのHTMLなので、文字を書き換えるだけで直せます。
+
+
+■ 1.4.2 ― ログイン内容をこの端末に覚える
+
+   一度入れたものは、そのブラウザに残ります。打ち直しは要りません。
+
+     覚えるもの   合言葉（グループ）／ Riot ID ／ Discord ／ 先生・生徒
+     覚えない     合言葉の文字そのもの（ハッシュだけを持ちます）
+
+   ・ボードから出ても（ログアウトしても）4つとも残ります。
+     ログイン画面に戻ると STEP1〜4 がぜんぶ「✓」で、
+     「ボードに入場する」を押すだけで戻れます。
+   ・使い方ページなど別の画面へ行って戻っても残ります。
+   ・Riot ID は「確認する」を押す前の打ちかけでも覚えます。
+
+   消したいとき
+     ログイン画面 STEP1 の「この端末の記憶を消す」。
+     共用のPCを使ったあとはこれを押してください。
+     （ボード上の登録は残ります）
+
+   ※ ブラウザの localStorage に入ります。シークレットウィンドウや
+     別のブラウザでは引き継がれません。
+
+
+■ 1.4.1 で直したところ
+
+   ・合言葉の確認が Firestore に拒否されたとき、英語のまま
+     「Missing or insufficient permissions」と出ていました。
+     日本語にして、その場に「足すべきルールの全文＋コピーボタン
+     ＋Firebaseコンソールを開く＋もう一度ためす」を出すようにしました。
+   ・グループ作成・主催の決定でも同じ案内が出ます。
 
 
 ■ 1.4 で変えたところ（合言葉でグループ分け）

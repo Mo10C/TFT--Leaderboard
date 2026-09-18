@@ -15,7 +15,7 @@
 <!-- ★ 合言葉（グループ）の確認・作成で Firestore を使うので、ここでも読み込みます -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<link rel="stylesheet" href="ui.css?v=cup14">
+<link rel="stylesheet" href="ui.css?v=cup142">
 <style>
 /* ===== ログイン画面 固有 ===== */
 .wrap{max-width:720px}
@@ -92,10 +92,23 @@
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 34%,transparent)}
 .mknew .mkt{font-size:13px;font-weight:800}
 .mknew .mkd{font-size:11.5px;color:var(--muted);line-height:1.85;margin-top:5px}
+
+/* ---- Firestore のルールが足りないときの案内 ---- */
+.rules{display:none;margin-top:12px;padding:15px 16px;border-radius:16px;
+  background:color-mix(in srgb,var(--danger) 6%,var(--surface));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--danger) 32%,transparent)}
+.rules.show{display:block}
+.rules h4{font-size:13px;font-weight:800;margin-bottom:6px}
+.rules p{font-size:11.5px;color:var(--muted);line-height:1.9}
+.rules pre{margin-top:10px;padding:12px 13px;border-radius:12px;overflow:auto;
+  background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--hairline-2);
+  font-family:"Space Grotesk",ui-monospace,monospace;font-size:11px;line-height:1.7;
+  white-space:pre;color:var(--ink)}
+.rules .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 /* 確認できたら入力欄は引っ込める */
 #cardGroup.done .riot-row, #cardGroup.done .showpw{display:none}
-.grpchg{display:none;margin-top:12px}
-#cardGroup.done .grpchg{display:block}
+.grpchg{display:none;gap:8px;flex-wrap:wrap;margin-top:12px}
+#cardGroup.done .grpchg{display:flex}
 
 /* ---- STEP4: 先生 / 生徒 を選ぶ ---- */
 .kinds{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -123,7 +136,8 @@
 .kind[data-kind="student"].on .ki{color:var(--accent-2-deep)}
 
 /* ---- お知らせ ---- */
-.msg{font-size:12.5px;line-height:1.8;margin-top:12px;padding:11px 14px;border-radius:12px;display:none}
+.msg{font-size:12.5px;line-height:1.8;margin-top:12px;padding:11px 14px;border-radius:12px;display:none;
+  white-space:pre-line}
 .msg.show{display:block}
 .msg.err{color:var(--danger);background:color-mix(in srgb,var(--danger) 8%,var(--surface));
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--danger) 34%,transparent)}
@@ -194,7 +208,10 @@
         <div class="psub" id="grpSub">—</div>
       </div>
     </div>
-    <div class="grpchg"><button class="mini" id="grpChange">別の合言葉にする</button></div>
+    <div class="grpchg">
+      <button class="mini" id="grpChange">別の合言葉にする</button>
+      <button class="mini danger" id="forgetBtn">この端末の記憶を消す</button>
+    </div>
     <!-- 新規作成の確認 -->
     <div class="mknew" id="grpNew" style="display:none">
       <div class="mkt">その合言葉のグループはまだありません。</div>
@@ -206,6 +223,20 @@
       </div>
     </div>
     <div class="msg" id="grpMsg"></div>
+
+    <!-- Firestore のルールが足りないときだけ出る -->
+    <div class="rules" id="grpRules">
+      <h4>Firestore のルールをあと2行足してください</h4>
+      <p>Firebase コンソール → <b>Firestore Database</b> → <b>ルール</b> を開いて、下の内容に置きかえて
+        <b>「公開」</b>を押してください。押した直後から使えるようになります。<br>
+        （すでに書いてある行は消さずに、★の2行を足すだけでもOKです）</p>
+      <pre id="grpRulesText"></pre>
+      <div class="row">
+        <button class="mini" id="grpRulesCopy">ルールをコピー</button>
+        <a class="mini" id="grpRulesLink" href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firebase コンソールを開く</a>
+        <button class="mini grad" id="grpRulesRetry">もう一度ためす</button>
+      </div>
+    </div>
   </div>
 
   <!-- STEP 2: Riot ID -->
@@ -282,7 +313,7 @@
 </div>
 
 <script src="config.js"></script>
-<script src="core.js?v=cup14"></script>
+<script src="core.js?v=cup142"></script>
 <script>
 (function(){
   const { Riot, DiscordAuth, Session, Groups, rankLabel, rankColor, kindLabel, kindOf } = window.LBCore;
@@ -350,10 +381,36 @@
 
   $("grpShow").onchange = e => { $("grpInput").type = e.target.checked ? "text" : "password"; };
 
+  /* ---- Firestore のルール案内 ----
+     「Missing or insufficient permissions」が出るのは、ほぼこれです。 */
+  const COLS = (CFG.collections || {});
+  const RULES_TEXT =
+    "rules_version = '2';\n" +
+    "service cloud.firestore {\n" +
+    "  match /databases/{database}/documents {\n" +
+    "    match /boards/{id}          { allow read, write: if true; }\n" +
+    "    match /board_index/{id}     { allow read, write: if true; }\n" +
+    "    match /lboards/{id}         { allow read, write: if true; }\n" +
+    "    match /lboard_index/{id}    { allow read, write: if true; }\n" +
+    "    match /lboard_profiles/{id} { allow read, write: if true; }\n" +
+    "    match /" + (COLS.boards || "tboards") + "/{id}        { allow read, write: if true; }   // ★この版\n" +
+    "    match /" + (COLS.index  || "tboard_index") + "/{id}   { allow read, write: if true; }   // ★この版\n" +
+    "  }\n" +
+    "}";
+  $("grpRulesText").textContent = RULES_TEXT;
+  function showRules(on){ $("grpRules").classList.toggle("show", !!on); }
+  $("grpRulesCopy").onclick = async () => {
+    try { await navigator.clipboard.writeText(RULES_TEXT); $("grpRulesCopy").textContent = "コピーしました"; }
+    catch(e){ prompt("これをコピーしてください:", RULES_TEXT); }
+    setTimeout(() => { $("grpRulesCopy").textContent = "ルールをコピー"; }, 2000);
+  };
+  $("grpRulesRetry").onclick = () => { showRules(false); $("grpBtn").click(); };
+
   async function checkGroup(pw){
     const msg = $("grpMsg");
     hideMsg(msg);
     $("grpNew").style.display = "none";
+    showRules(false);
     pendingKey = "";
     let gk;
     try { gk = await Groups.hash(pw); }
@@ -371,10 +428,19 @@
         $("grpNewName").focus();
       }
     } catch(e){
-      showMsg(msg, "err", "確認できませんでした: " + e.message);
+      showMsg(msg, "err", e.message);
+      // 権限エラーなら、直し方をその場に出す
+      showRules(/ルール|権限|拒否/.test(e.message));
     }
   }
 
+  /* 共用のPCなどで、覚えている内容をぜんぶ消す */
+  $("forgetBtn").onclick = () => {
+    if (!confirm("この端末に覚えている 合言葉・Riot ID・Discord・立場 をすべて消しますか？\n（ボード上の登録は残ります）")) return;
+    try { localStorage.removeItem(DRAFT_KEY); } catch(e){}
+    Session.clear();
+    location.href = "login.html";
+  };
   $("grpChange").onclick = () => {
     delete draft.group; saveDraft(draft);
     hideMsg($("grpMsg"));
@@ -409,6 +475,7 @@
       renderGroup();
     } catch(e){
       showMsg($("grpMsg"), "err", e.message);
+      showRules(/ルール|権限|拒否/.test(e.message));
     }
     btn.disabled = false; btn.textContent = "このまま作る";
   };
@@ -430,7 +497,8 @@
         showMsg($("grpMsg"), "err", "このURLのグループは見つかりませんでした。主催に合言葉を聞いてください。");
       }
     } catch(e){
-      showMsg($("grpMsg"), "err", "グループを確認できませんでした: " + e.message);
+      showMsg($("grpMsg"), "err", e.message);
+      showRules(/ルール|権限|拒否/.test(e.message));
     }
     renderGroup();
   }
@@ -452,9 +520,16 @@
       $("cardRiot").classList.remove("done");
       $("riotTag").textContent = "未確認";
       $("riotProfile").style.display = "none";
+      // 確認前でも、前に打った文字は戻しておく
+      if (!$("riotInput").value && draft.riotText) $("riotInput").value = draft.riotText;
     }
     renderEnter();
   }
+  // 確認前の入力もそのまま覚えておく（打ち直しを減らすため）
+  $("riotInput").addEventListener("input", () => {
+    draft.riotText = $("riotInput").value;
+    saveDraft(draft);
+  });
   $("riotBtn").onclick = async () => {
     const btn = $("riotBtn"), msg = $("riotMsg");
     hideMsg(msg);
@@ -467,6 +542,7 @@
     try {
       const info = await Riot.lookup(riotId);
       draft.riot = info;
+      draft.riotText = info.gameName + "#" + info.tagLine;
       saveDraft(draft);
       showMsg(msg, "ok", "アカウントを確認しました。" + (info.rank ? "" : "（ランク情報なし＝未プレイの可能性）"));
       renderRiot();
@@ -563,9 +639,19 @@
     const g = { key: draft.group.key, name: draft.group.name || "" };
     // グループの主催がまだ決まっていなければ、この人が主催になる
     try { g.owner = await Groups.claimOwner(g.key, d.id); }
-    catch(e){ g.owner = false; }
+    catch(e){
+      showMsg($("grpMsg"), "err", e.message);
+      showRules(/ルール|権限|拒否/.test(e.message));
+      btn.disabled = false;
+      return;
+    }
     Session.set({ group: g, riot: draft.riot, discord: d, loggedInAt: Date.now() });
-    try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+    // ★ 下書きは消さない。
+    //   ボードから出ても、合言葉・Riot ID・Discord・立場がそのまま残るので、
+    //   次は「ボードに入場する」を押すだけで戻れます。
+    //   消したいときは STEP1 の「この端末の記憶を消す」から。
+    draft.group = g;
+    saveDraft(draft);
     // ★ この版はHOMEを持たないので、必ず大会ボードへ直行する。
     //   ?board= が無ければ default ボードに入る。
     const p = new URLSearchParams(location.search);
