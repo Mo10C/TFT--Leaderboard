@@ -1,0 +1,187 @@
+=========================================
+ TFT リーダーボード
+ cup 1.1 ― 2026-09-18
+=========================================
+
+ログイン → 大会のリーダーボード だけの、独立した仕組みです。
+特定のコミュニティ名を入れていないので、どの大会・スクリムでも使えます。
+ポータル版とは別フォルダに置いて使います。
+
+HOME・LPランキング・メンバー紹介・予定表・先生スナップショット・
+Discord自動投稿 は入っていません。
+
+
+■ ファイル
+
+   login.html   入口。Riot ID の確認 → Discord ログイン → 入場
+   board.html   大会ボード本体（組卓・出欠・順位入力・全体順位）
+   guide.html   ★ 使い方の案内ページ（ログイン不要で誰でも読めます）
+   admin.html   管理画面（管理者だけ）
+   core.js      共通ロジック（大会に必要なぶんだけ／2947行 → 1269行）
+   config.js    ★ あなた専用の設定
+   ui.css       見た目
+   assets/      アイコン画像
+   favicon.ico
+
+
+■ 画面のつながり
+
+   login.html ──▶ board.html ──▶ admin.html（管理者のみ）
+                      ▲                │
+                      └────────────────┘
+
+   guide.html は上の3画面すべてのヘッダーに「❓ 使い方」として置いてあります。
+   ログイン不要なので、Discord に直接貼って
+   「まずこれを読んで」と案内する使い方もできます。
+
+   参加者に配るのは login.html のURLです。
+   ?board=<大会ID> を付けると、その大会に直行します。
+
+     例: https://mo10c.github.io/cup/login.html?board=cup-2026-11
+
+   付けないと default という大会に入ります。
+
+
+■ ★ データは混ざりません
+
+   Firebase のプロジェクトはポータル版と同じものを使いますが、
+   保存先のコレクションを分けてあります。
+
+                  ポータル版            この版
+     大会ボード    lboards          →   tboards
+     大会の索引    lboard_index     →   tboard_index
+     ローカル保存  mcclb2:<ID>      →   mcccup:<ID>
+
+   config.js の collections で変えられます。
+
+
+■ セットアップ（3つだけ）
+
+  ① Firestore のルールに2行足す
+     Firebase コンソール → Firestore → ルール
+
+       rules_version = '2';
+       service cloud.firestore {
+         match /databases/{database}/documents {
+           match /boards/{id}        { allow read, write: if true; }   // 既存
+           match /board_index/{id}   { allow read, write: if true; }   // 既存
+           match /lboards/{id}       { allow read, write: if true; }   // ポータル版
+           match /lboard_index/{id}  { allow read, write: if true; }   // ポータル版
+           match /tboards/{id}       { allow read, write: if true; }   // ★この版
+           match /tboard_index/{id}  { allow read, write: if true; }   // ★この版
+         }
+       }
+
+  ② Discord の Redirects に、このフォルダの login.html を足す
+     Discord Developer Portal → OAuth2 → Redirects
+
+     ※ Worker の RETURN_ORIGINS にオリジンが入っていれば、
+       実際には Worker が戻り先を決めるので、
+       同じオリジン（https://mo10c.github.io）なら追加は不要です。
+       別ドメインに置く場合だけ、Worker の RETURN_ORIGINS に足してください。
+
+  ③ config.js の admins を確認
+     いまは usernames: ["mo10c"] が入っています。
+     ここが3つとも空だと「セットアップ中」とみなして全員が管理者になります。
+
+   Worker（tft-riot-proxy）はいま動いているものをそのまま使うので、
+   デプロイし直す必要はありません。
+
+
+■ 使いかた
+
+  1. admin.html を開く（管理者だけ入れます）
+  2. 「🗂 大会の管理」→「＋ 新しい大会を作る」で大会を作る
+  3. 「🏆 この大会」で 大会名 / 試合数 / 卓数 / 公開範囲 を決める
+  4. 下の「🔗 参加者に配るURLをコピー」で login.html のURLを配る
+  5. 参加者がログインすると board.html の参加者バーに自動で並ぶ
+  6. 管理者が組卓（ドラッグ＆ドロップ）→ 対戦 → 「📊 結果」で順位を入力
+     （⚡自動取得で Riot の履歴から取ることもできます）
+  7. 🏆 全体順位が累計ptで自動集計（1位8pt 〜 8位1pt）
+
+
+■ 管理画面（admin.html）のタブ
+
+   🏆 この大会    大会名 / 試合数 / 卓数 / 公開範囲
+   👥 メンバー    表示名の固定・大会に参加・除名・ランク再取得
+   🗂 大会の管理  大会の作成・切り替え・削除
+   🔌 接続設定    Worker URL の上書き・接続テスト・/diag・保存先の確認
+   💾 データ      JSONバックアップ / 復元 / 順位のクリア
+
+
+■ 権限
+
+                                管理者   ふつうの人
+   ボードの閲覧・全体順位          ○        ○
+   ログイン時の自己登録            ○        ○
+   自分の出欠チェック              ○        ○
+   他人の出欠・一括操作            ○        ✗
+   大会名・試合数・卓数の変更      ○        ✗
+   組卓・順位入力・⚡自動取得      ○        ✗
+   admin.html                     ○        ✗（ロック画面）
+
+   ※ ボタンを隠すだけでなく core.js の中でも弾いています。
+     ただし Firestore のルールは緩いままなので、
+     ブラウザのコンソールから直接書き換えることは技術的には可能です。
+     身内の大会なら実害はありませんが、外部に開く大会では注意してください。
+
+
+■ 運営（観戦）ロール
+
+   config.js の roles.staffRoleIds にロールIDを入れると、
+   そのロールの人は「見るだけの人」になります。
+
+     ・すべての画面を閲覧できる
+     ・参加者・組卓・全体順位に入らない
+     ・大会に出てもらうときは、管理画面の「👥 メンバー」で
+       その人の「大会に参加」をONにする（再ログインしても消えません）
+
+   いまは空なので、全員がふつうの参加者になります。
+
+
+■ 使い方ページ（guide.html）
+
+   はじめての人がこれだけ読めば参加できる案内ページです。
+
+     ・参加する人の3ステップ（Riot ID → Discord → 入場）
+     ・ボード画面の見かた（図で説明）
+     ・主催する人の流れ（大会を作る → URLを配る → 組卓 → 順位入力）
+     ・ポイント表（1位8pt 〜 8位1pt）
+     ・誰が何をできるかの一覧
+     ・よくある質問 8件
+
+   文言を変えたいときは guide.html を直接編集してください。
+   ふつうのHTMLなので、文字を書き換えるだけで直せます。
+
+
+■ 名前を変えたいとき
+
+   「TFT リーダーボード」という表示名は、各HTMLの
+     ・<title>
+     ・ヘッダーの <h1> と .sub
+   にあります。コミュニティ名を出したいときはここを書き換えてください。
+
+   アイコン（六角形のマーク）は
+     assets/mark.png      ヘッダー用
+     assets/icon-192.png  スマホのホーム画面用
+     assets/icon-512.png  同上（大）
+     assets/apple-touch-icon.png
+     favicon.ico          タブのアイコン
+   を差し替えれば変わります。
+
+
+■ ポータル版との違い
+
+   ・HOME が無く、ログインしたらそのまま大会ボードに入ります
+   ・LPランキング / メンバー紹介 / 予定表 / 先生スナップショット は入っていません
+   ・Discord への自動投稿はしません（Cron も使いません）
+   ・core.js が 1269行（ポータル版は 2947行）
+   ・特定のコミュニティ名・校章を使っていません
+
+
+■ 置きかた
+
+   このフォルダごと、リポジトリの好きな場所に置いてください。
+     例: mo10c.github.io/cup/
+
+   ポータル版と同じリポジトリでも、別フォルダなら干渉しません。

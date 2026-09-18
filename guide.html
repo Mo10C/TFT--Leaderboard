@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>使い方 ｜ TFT リーダーボード</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#7CA455">
+<meta name="description" content="TFT リーダーボードの使い方。Discord でログインすると自動で選手登録され、組卓と順位をみんなで共有できます。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ui.css?v=cup1">
+<style>
+.wrap{max-width:940px}
+
+/* ---- ヒーロー ---- */
+.hero{position:relative;overflow:hidden;border-radius:26px;margin-bottom:20px;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 24%,var(--surface)),var(--surface) 64%);
+  border:1.5px solid color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:var(--shadow)}
+.hero::after{content:"";position:absolute;right:-70px;top:-90px;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent) 26%,transparent),transparent 68%);pointer-events:none}
+.hero-in{position:relative;padding:34px clamp(20px,4vw,38px) 30px}
+.hero h2{font-size:clamp(21px,4.2vw,30px);font-weight:900;line-height:1.45;letter-spacing:.01em}
+.hero h2 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:13.5px;color:var(--muted);line-height:2;margin-top:10px;max-width:640px}
+.hero .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.btn{border:none;border-radius:14px;padding:13px 24px;font-size:14px;font-weight:900;color:#fff;
+  background:var(--grad);box-shadow:0 4px 0 0 color-mix(in srgb,var(--accent-deep) 72%,#000);
+  display:inline-block;transition:transform .1s}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 0 color-mix(in srgb,var(--accent-deep) 72%,#000)}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--border-strong);box-shadow:none}
+.btn.ghost:hover{border-color:var(--accent-2)}
+
+/* ---- 章 ---- */
+.chap{margin-top:34px}
+.chap > h3{display:flex;align-items:center;gap:11px;font-size:17px;font-weight:900;margin-bottom:6px}
+.chap > h3 .n{width:30px;height:30px;border-radius:10px;flex:none;display:grid;place-items:center;
+  font-family:"Space Grotesk",sans-serif;font-size:14px;color:#fff;background:var(--grad)}
+.chap > .cl{font-size:12.5px;color:var(--muted);line-height:1.9;margin:0 0 15px 41px}
+
+/* ---- 手順カード ---- */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:13px}
+.step{background:var(--surface);border:1.5px solid var(--border);border-radius:18px;
+  padding:18px 18px 17px;box-shadow:var(--shadow-soft);position:relative;overflow:hidden}
+.step::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--tint,var(--accent))}
+.step .sn{font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;
+  color:color-mix(in srgb,var(--tint,var(--accent)) 78%,var(--ink))}
+.step .si{font-size:27px;line-height:1;margin:7px 0 9px}
+.step h4{font-size:14.5px;font-weight:900;line-height:1.45;margin-bottom:6px}
+.step p{font-size:12px;color:var(--muted);line-height:1.95}
+.step p b{color:var(--ink)}
+
+/* ---- 図（画面の見かた） ---- */
+.shot{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;
+  overflow:hidden;box-shadow:var(--shadow-soft)}
+.shot figure{margin:0;padding:16px clamp(14px,3vw,20px) 4px}
+.shot svg{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--border)}
+.shot .legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;
+  padding:14px clamp(14px,3vw,20px) 18px}
+.lg{display:flex;gap:10px;align-items:flex-start}
+.lg .k{width:23px;height:23px;border-radius:8px;flex:none;display:grid;place-items:center;
+  font-family:"Space Grotesk",sans-serif;font-size:11px;font-weight:700;color:#fff}
+.lg .t{font-size:12px;line-height:1.75;min-width:0}
+.lg .t b{font-weight:900}
+.lg .t span{color:var(--muted)}
+
+/* ---- 表 ---- */
+.tbl{background:var(--surface);border:1.5px solid var(--border);border-radius:18px;
+  overflow:hidden;box-shadow:var(--shadow-soft)}
+.tbl table{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;font-size:10.5px;font-weight:900;color:var(--muted);padding:10px 15px;
+  background:var(--surface-2);border-bottom:1.5px solid var(--border-strong);white-space:nowrap}
+.tbl td{padding:10px 15px;border-bottom:1px solid var(--border);line-height:1.75}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td.c{text-align:center;font-weight:900;white-space:nowrap}
+.yes{color:var(--ok)}
+.no{color:var(--muted)}
+
+/* ---- よくある質問 ---- */
+.faq{background:var(--surface);border:1.5px solid var(--border);border-radius:18px;
+  overflow:hidden;box-shadow:var(--shadow-soft)}
+.faq details{border-bottom:1px solid var(--border)}
+.faq details:last-child{border-bottom:none}
+.faq summary{padding:14px 17px;font-size:13px;font-weight:900;cursor:pointer;
+  list-style:none;display:flex;align-items:center;gap:10px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:"＋";font-family:"Space Grotesk",sans-serif;color:var(--accent-deep);
+  font-size:15px;flex:none;width:17px}
+.faq details[open] summary::before{content:"−"}
+.faq summary:hover{background:var(--surface-2)}
+.faq .a{padding:0 17px 16px 44px;font-size:12.5px;color:var(--muted);line-height:2}
+.faq .a b{color:var(--ink)}
+.faq .a code{font-family:"Space Grotesk",monospace;font-size:11px;background:var(--surface-2);
+  border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--ink)}
+
+.pts{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+.pt{font-family:"Space Grotesk",sans-serif;font-size:11.5px;font-weight:700;
+  border:1.5px solid var(--border-strong);border-radius:999px;padding:3px 11px;white-space:nowrap}
+.pt.top{border-color:var(--accent);color:var(--accent-deep);
+  background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+
+.foot{margin-top:38px;padding:22px 0 0;border-top:1px solid var(--border);
+  font-size:12px;color:var(--muted);line-height:2;text-align:center}
+.foot .btn{margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <div class="brandmark"><img src="assets/mark.png" alt="TFT リーダーボード" onerror="this.parentNode.classList.add('noimg');this.remove()"></div>
+      <div>
+        <h1>使い方</h1>
+        <div class="sub">TFT リーダーボード</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <a class="iconbtn" href="login.html">ログイン</a>
+    <button class="iconbtn" id="themeBtn">🌙</button>
+  </div>
+
+  <!-- ============ ヒーロー ============ -->
+  <div class="hero">
+    <div class="hero-in">
+      <h2>大会の<span class="g">組卓と順位</span>を、<br>みんなで同じ画面で見る。</h2>
+      <p>
+        Discord でログインすると<b>自動で選手登録</b>されます。
+        主催は参加者を卓へドラッグして配置し、順位を入れるだけ。
+        累計ポイントの全体順位が<b>その場で全員の画面に反映</b>されます。
+        アプリのインストールも、スプレッドシートの共有も要りません。
+      </p>
+      <div class="cta">
+        <a class="btn" href="login.html">ログインして始める →</a>
+        <a class="btn ghost" href="#organizer">主催する人はこちら</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 参加する人 ============ -->
+  <div class="chap">
+    <h3><span class="n">1</span> 参加する人の使い方</h3>
+    <div class="cl">やることは3つだけ。1分で終わります。</div>
+    <div class="steps">
+      <div class="step" style="--tint:var(--sky)">
+        <div class="sn">STEP 1</div>
+        <div class="si">🎮</div>
+        <h4>Riot ID を入れる</h4>
+        <p>ゲーム内の <b>Name#TAG</b>（例: Mo10C#819）を入力して「確認する」。
+          いまのランクが自動で取れます。</p>
+      </div>
+      <div class="step" style="--tint:var(--navy)">
+        <div class="sn">STEP 2</div>
+        <div class="si">💬</div>
+        <h4>Discord でログイン</h4>
+        <p>名前・アイコン・<b>ロール</b>を読み取ります。
+          ロールは組卓の絞り込みや振り分けに使われます。</p>
+      </div>
+      <div class="step" style="--tint:var(--leaf)">
+        <div class="sn">STEP 3</div>
+        <div class="si">🏆</div>
+        <h4>入場する</h4>
+        <p>押すだけで<b>選手として登録</b>され、参加者バーに並びます。
+          あとは主催の指示を待つだけ。</p>
+      </div>
+    </div>
+    <div class="cl" style="margin-top:14px">
+      入場したあと、あなたが自分でできるのは<b>「この試合に出るかどうか」のチェック</b>だけです。
+      席の配置や順位の入力は主催が行います。
+    </div>
+  </div>
+
+  <!-- ============ 画面の見かた ============ -->
+  <div class="chap">
+    <h3><span class="n">2</span> ボードの見かた</h3>
+    <div class="cl">ログインすると開く画面です。上から順にこうなっています。</div>
+    <div class="shot">
+      <figure>
+        <svg viewBox="0 0 800 400" role="img" aria-label="ボード画面の構成図">
+          <rect width="800" height="400" fill="var(--surface-2)"/>
+
+          <!-- ヘッダー -->
+          <rect x="16" y="14" width="768" height="38" rx="10" fill="var(--surface)" stroke="var(--border-strong)"/>
+          <circle cx="40" cy="33" r="11" fill="var(--accent)"/>
+          <rect x="60" y="25" width="120" height="7" rx="3.5" fill="var(--ink)" opacity=".62"/>
+          <rect x="60" y="37" width="72" height="5" rx="2.5" fill="var(--muted)" opacity=".5"/>
+          <rect x="600" y="23" width="80" height="19" rx="9.5" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+          <rect x="690" y="23" width="80" height="19" rx="9.5" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+
+          <!-- ① 参加者バー -->
+          <rect x="16" y="62" width="768" height="88" rx="12" fill="var(--surface)" stroke="var(--sky)" stroke-width="2"/>
+          <circle cx="36" cy="80" r="10" fill="var(--sky)"/>
+          <text x="36" y="84" font-size="11" font-weight="700" fill="#fff" text-anchor="middle"
+                font-family="Space Grotesk, sans-serif">1</text>
+          <rect x="54" y="74" width="96" height="8" rx="4" fill="var(--ink)" opacity=".55"/>
+          <g>
+            <rect x="30" y="98" width="112" height="38" rx="10" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+            <circle cx="52" cy="117" r="11" fill="var(--leaf)" opacity=".8"/>
+            <rect x="70" y="109" width="56" height="6" rx="3" fill="var(--ink)" opacity=".5"/>
+            <rect x="70" y="120" width="38" height="5" rx="2.5" fill="var(--muted)" opacity=".55"/>
+          </g>
+          <g opacity=".85">
+            <rect x="152" y="98" width="112" height="38" rx="10" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+            <circle cx="174" cy="117" r="11" fill="var(--coral)" opacity=".8"/>
+            <rect x="192" y="109" width="56" height="6" rx="3" fill="var(--ink)" opacity=".5"/>
+            <rect x="192" y="120" width="38" height="5" rx="2.5" fill="var(--muted)" opacity=".55"/>
+          </g>
+          <g opacity=".7">
+            <rect x="274" y="98" width="112" height="38" rx="10" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+            <circle cx="296" cy="117" r="11" fill="var(--mint)" opacity=".8"/>
+            <rect x="314" y="109" width="56" height="6" rx="3" fill="var(--ink)" opacity=".5"/>
+            <rect x="314" y="120" width="38" height="5" rx="2.5" fill="var(--muted)" opacity=".55"/>
+          </g>
+          <!-- ドラッグの矢印 -->
+          <path d="M400 117 C 450 117, 460 180, 508 196" stroke="var(--accent)" stroke-width="2.5"
+                fill="none" stroke-dasharray="6 5"/>
+          <path d="M508 196 l -12 -7 l 2 12 z" fill="var(--accent)"/>
+          <text x="432" y="150" font-size="11" font-weight="700" fill="var(--accent-deep)"
+                font-family="Zen Kaku Gothic New, sans-serif">ドラッグ</text>
+
+          <!-- ② 試合タブ -->
+          <rect x="16" y="160" width="768" height="30" rx="10" fill="var(--surface)" stroke="var(--leaf)" stroke-width="2"/>
+          <circle cx="36" cy="175" r="10" fill="var(--leaf)"/>
+          <text x="36" y="179" font-size="11" font-weight="700" fill="#fff" text-anchor="middle"
+                font-family="Space Grotesk, sans-serif">2</text>
+          <rect x="54" y="167" width="62" height="16" rx="8" fill="var(--accent)"/>
+          <rect x="122" y="167" width="62" height="16" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+          <rect x="190" y="167" width="62" height="16" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+          <rect x="258" y="167" width="54" height="16" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+
+          <!-- ③ 卓 -->
+          <rect x="16" y="200" width="374" height="184" rx="12" fill="var(--surface)" stroke="var(--coral)" stroke-width="2"/>
+          <circle cx="36" cy="218" r="10" fill="var(--coral)"/>
+          <text x="36" y="222" font-size="11" font-weight="700" fill="#fff" text-anchor="middle"
+                font-family="Space Grotesk, sans-serif">3</text>
+          <rect x="54" y="212" width="46" height="8" rx="4" fill="var(--ink)" opacity=".55"/>
+          <g>
+            <rect x="30" y="234" width="346" height="24" rx="8" fill="var(--surface-2)" stroke="var(--accent)" stroke-width="1.5"/>
+            <circle cx="46" cy="246" r="8" fill="var(--leaf)" opacity=".8"/>
+            <rect x="62" y="243" width="72" height="6" rx="3" fill="var(--ink)" opacity=".5"/>
+            <rect x="330" y="240" width="34" height="13" rx="6.5" fill="var(--accent)"/>
+          </g>
+          <rect x="30" y="264" width="346" height="24" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-dasharray="4 4"/>
+          <rect x="30" y="294" width="346" height="24" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-dasharray="4 4"/>
+          <rect x="30" y="324" width="346" height="24" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-dasharray="4 4"/>
+          <rect x="30" y="354" width="346" height="20" rx="8" fill="var(--surface-2)" stroke="var(--border-strong)" stroke-dasharray="4 4"/>
+
+          <!-- ④ 結果 -->
+          <rect x="402" y="200" width="382" height="184" rx="12" fill="var(--surface)" stroke="var(--navy)" stroke-width="2"/>
+          <circle cx="422" cy="218" r="10" fill="var(--navy)"/>
+          <text x="422" y="222" font-size="11" font-weight="700" fill="#fff" text-anchor="middle"
+                font-family="Space Grotesk, sans-serif">4</text>
+          <rect x="440" y="212" width="82" height="8" rx="4" fill="var(--ink)" opacity=".55"/>
+          <g font-family="Space Grotesk, sans-serif" font-size="12" font-weight="700">
+            <text x="424" y="253" fill="var(--accent-deep)">1</text>
+            <circle cx="452" cy="249" r="9" fill="var(--leaf)" opacity=".8"/>
+            <rect x="470" y="245" width="90" height="7" rx="3.5" fill="var(--ink)" opacity=".5"/>
+            <text x="760" y="253" fill="var(--ink)" text-anchor="end">8</text>
+
+            <text x="424" y="283" fill="var(--muted)">2</text>
+            <circle cx="452" cy="279" r="9" fill="var(--coral)" opacity=".8"/>
+            <rect x="470" y="275" width="74" height="7" rx="3.5" fill="var(--ink)" opacity=".42"/>
+            <text x="760" y="283" fill="var(--ink)" text-anchor="end">7</text>
+
+            <text x="424" y="313" fill="var(--muted)">3</text>
+            <circle cx="452" cy="309" r="9" fill="var(--mint)" opacity=".8"/>
+            <rect x="470" y="305" width="82" height="7" rx="3.5" fill="var(--ink)" opacity=".42"/>
+            <text x="760" y="313" fill="var(--ink)" text-anchor="end">5</text>
+
+            <text x="424" y="343" fill="var(--muted)">4</text>
+            <circle cx="452" cy="339" r="9" fill="var(--sky)" opacity=".8"/>
+            <rect x="470" y="335" width="66" height="7" rx="3.5" fill="var(--ink)" opacity=".42"/>
+            <text x="760" y="343" fill="var(--ink)" text-anchor="end">4</text>
+          </g>
+        </svg>
+      </figure>
+      <div class="legend">
+        <div class="lg"><span class="k" style="background:var(--sky)">1</span>
+          <span class="t"><b>参加者バー</b><br><span>入場した人が自動で並びます。チェックが「この試合に出る」</span></span></div>
+        <div class="lg"><span class="k" style="background:var(--leaf)">2</span>
+          <span class="t"><b>試合タブ</b><br><span>第1試合・第2試合…と切り替え。いちばん右が「📊 結果」</span></span></div>
+        <div class="lg"><span class="k" style="background:var(--coral)">3</span>
+          <span class="t"><b>卓と席</b><br><span>1卓8席。参加者をここへドラッグして配置します</span></span></div>
+        <div class="lg"><span class="k" style="background:var(--navy)">4</span>
+          <span class="t"><b>全体順位</b><br><span>累計ポイントの順位。順位を入れると自動で並びかわります</span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 主催する人 ============ -->
+  <div class="chap" id="organizer">
+    <h3><span class="n">3</span> 主催する人の使い方</h3>
+    <div class="cl">
+      管理者として設定された人だけが、ここから先を操作できます
+      （<code style="font-family:'Space Grotesk',monospace">config.js</code> の <b>admins</b> に入れた人）。
+    </div>
+    <div class="steps">
+      <div class="step" style="--tint:var(--gold)">
+        <div class="sn">準備</div>
+        <div class="si">⚙️</div>
+        <h4>大会を作る</h4>
+        <p><b>管理画面 →「🗂 大会の管理」</b>で新しい大会を作り、
+          <b>「🏆 この大会」</b>で名前・試合数・卓数を決めます。</p>
+      </div>
+      <div class="step" style="--tint:var(--sky)">
+        <div class="sn">告知</div>
+        <div class="si">🔗</div>
+        <h4>URLを配る</h4>
+        <p>管理画面の下にある<b>「参加者に配るURLをコピー」</b>を押して、
+          Discord などに貼るだけ。開いた人が自動で並びます。</p>
+      </div>
+      <div class="step" style="--tint:var(--coral)">
+        <div class="sn">当日</div>
+        <div class="si">🖐</div>
+        <h4>組卓する</h4>
+        <p>参加者を卓の席へ<b>ドラッグ</b>。
+          席どうしのドラッグで入れ替え、参加者バーへ戻すと外れます。
+          <b>🎲 自動組卓</b>もあります。</p>
+      </div>
+      <div class="step" style="--tint:var(--leaf)">
+        <div class="sn">対戦後</div>
+        <div class="si">📊</div>
+        <h4>順位を入れる</h4>
+        <p><b>「📊 結果」タブ</b>で1位〜8位を選ぶだけ。
+          <b>⚡自動取得</b>を押すと、Riot の対戦履歴から順位を読み取ります。</p>
+      </div>
+    </div>
+
+    <div class="cl" style="margin-top:20px;margin-left:0"><b>ポイントの入りかた</b></div>
+    <div class="pts">
+      <span class="pt top">1位 8pt</span><span class="pt top">2位 7pt</span>
+      <span class="pt top">3位 6pt</span><span class="pt top">4位 5pt</span>
+      <span class="pt">5位 4pt</span><span class="pt">6位 3pt</span>
+      <span class="pt">7位 2pt</span><span class="pt">8位 1pt</span>
+    </div>
+  </div>
+
+  <!-- ============ できること ============ -->
+  <div class="chap">
+    <h3><span class="n">4</span> 誰が何をできるか</h3>
+    <div class="cl">主催（管理者）と、ふつうの参加者でできることが分かれています。</div>
+    <div class="tbl">
+      <table>
+        <tr><th>できること</th><th style="text-align:center">主催</th><th style="text-align:center">参加者</th></tr>
+        <tr><td>ボードを見る・全体順位を見る</td><td class="c yes">○</td><td class="c yes">○</td></tr>
+        <tr><td>ログインして自分を登録する</td><td class="c yes">○</td><td class="c yes">○</td></tr>
+        <tr><td><b>自分の</b>出欠チェック</td><td class="c yes">○</td><td class="c yes">○</td></tr>
+        <tr><td>他の人の出欠・一括操作</td><td class="c yes">○</td><td class="c no">—</td></tr>
+        <tr><td>大会名・試合数・卓数の変更</td><td class="c yes">○</td><td class="c no">—</td></tr>
+        <tr><td>組卓・席の配置・順位の入力</td><td class="c yes">○</td><td class="c no">—</td></tr>
+        <tr><td>管理画面を開く</td><td class="c yes">○</td><td class="c no">—</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ FAQ ============ -->
+  <div class="chap">
+    <h3><span class="n">5</span> よくある質問</h3>
+    <div class="cl">つまずきやすいところをまとめました。</div>
+    <div class="faq">
+      <details open>
+        <summary>ログインしたのに参加者に並びません</summary>
+        <div class="a">
+          ログイン画面の<b>「ボードに入場する」まで押す</b>と並びます。
+          Riot ID の確認と Discord ログインの両方が終わっていないとボタンが押せません。
+        </div>
+      </details>
+      <details>
+        <summary>ランクが「ランクなし」になります</summary>
+        <div class="a">
+          そのアカウントが<b>今のセットでランク戦をまだプレイしていない</b>ときの表示です。
+          正常な動作で、大会の進行には影響しません。
+        </div>
+      </details>
+      <details>
+        <summary>名前を変えたい／変わってしまう</summary>
+        <div class="a">
+          表示名は Discord の名前をそのまま使います。固定したいときは主催に頼んでください。
+          管理画面の<b>「👥 メンバー」で表示名を入れると、本人が再ログインしても変わらなくなります</b>。
+        </div>
+      </details>
+      <details>
+        <summary>⚡自動取得で順位が入りません</summary>
+        <div class="a">
+          その卓の<b>2人以上が同じ対戦に入っている</b>必要があります。
+          直近の履歴から探すので、対戦直後に押してください。
+          見つからない人は手で入れられます（誰が見つからなかったかは画面に出ます）。
+        </div>
+      </details>
+      <details>
+        <summary>途中で試合数や卓数を減らしたい</summary>
+        <div class="a">
+          減らせますが、<b>その先の試合・卓に入っていた配置と順位は消えます</b>。
+          消える前に管理画面の「💾 データ」からバックアップを取っておくと安心です。
+        </div>
+      </details>
+      <details>
+        <summary>特定のロールの人だけ入れるようにしたい</summary>
+        <div class="a">
+          管理画面の<b>「🏆 この大会」→ 公開範囲</b>で「指定ロールの保持者だけ」を選び、
+          ロールを選んで保存します。管理者はいつでも入れます。
+        </div>
+      </details>
+      <details>
+        <summary>運営は参加者に入れたくない</summary>
+        <div class="a">
+          <code>config.js</code> の <b>roles.staffRoleIds</b> に運営ロールのIDを入れると、
+          その人は「見るだけの人」になり、参加者・組卓・全体順位に入らなくなります。
+          出てもらうときは管理画面の「👥 メンバー」で<b>「大会に参加」</b>をONにしてください。
+        </div>
+      </details>
+      <details>
+        <summary>データはどこに保存されますか</summary>
+        <div class="a">
+          Firestore に保存され、開いている全員の画面へ<b>リアルタイムで反映</b>されます。
+          ヘッダーに <b>● LIVE 共有中</b> と出ていれば共有できています。
+          「ローカル保存モード」と出ているときは、そのブラウザの中だけに保存されています。
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div class="foot">
+    準備ができたら、ログインして始めましょう。
+    <div><a class="btn" href="login.html">ログインして始める →</a></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // テーマ切り替えだけ。このページはログイン不要で読めます。
+  const KEY = "mcc-portal-theme";
+  const btn = document.getElementById("themeBtn");
+  function apply(t){
+    document.documentElement.setAttribute("data-theme", t);
+    btn.textContent = (t === "dark") ? "☀️" : "🌙";
+  }
+  let cur = "light";
+  try { cur = localStorage.getItem(KEY) || "light"; } catch(e){}
+  apply(cur);
+  btn.onclick = () => {
+    const t = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    try { localStorage.setItem(KEY, t); } catch(e){}
+    apply(t);
+  };
+})();
+</script>
+</body>
+</html>
