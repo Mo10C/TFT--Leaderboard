@@ -8,8 +8,9 @@
      { id: "u_<discordId>",
        name, nameLocked, riotId, puuid,
        rank: { tier, division, lp, queue },
-       discord: { id, name, username, avatar },
-       roles: [{id, name, color}],   // ログイン時点のギルドロール
+       discord: { id, name, username, avatar, kind:"teacher"|"student" },
+       roles: [{id, name, color}],   // ★ 先生 / 生徒 だけ。Discordのギルドロールは使いません。
+       kindLocked,                   // 管理者が立場を変えた印（再ログインで戻らない）
        joinedAt, updatedAt }
 
    ★ ボード状態（v2互換の縮小版・個人戦）:
@@ -38,7 +39,10 @@
   /* =============================================================
      接続設定（config.js を localStorage で上書きできる）
      ============================================================= */
-  const RIOT_CFG_KEY = "mcc-lb2-riot-config";
+  /* ★ localStorage のキーは collections.prefix（= mcccup）から作ります。
+     ポータル版は mcclb2 なので、同じブラウザで両方を開いても
+     ログイン情報が上書きし合いません。 */
+  const RIOT_CFG_KEY = LSP + "-riot-config";
   function readOverride() {
     try { const raw = localStorage.getItem(RIOT_CFG_KEY); return raw ? (JSON.parse(raw) || {}) : {}; }
     catch (e) { return {}; }
@@ -65,6 +69,37 @@
     clear() { try { localStorage.removeItem(RIOT_CFG_KEY); } catch (e) { } return effCfg(); }
   };
 
+  /* =============================================================
+     ★ 立場（先生 / 生徒）
+     この版は Discord サーバーのロールを一切見ません。
+     Discordからは「表示名」と「アイコン」だけを受け取り、
+     ログイン時に本人が選んだ 先生 / 生徒 をロールの代わりに使います。
+     ロールの仕組み（絞り込み・自動組卓・公開範囲）はそのまま流用できるよう、
+     選んだ立場を roles:[{id,name,color}] の形に変換して持たせています。
+     ============================================================= */
+  const KIND_ROLES = [
+    { id: "teacher", name: "先生", color: 0xEFA317 },
+    { id: "student", name: "生徒", color: 0x2E9BC9 }
+  ];
+  function kindRole(kind) {
+    const k = String(kind || "");
+    const r = KIND_ROLES.find(x => x.id === k);
+    return r ? Object.assign({}, r) : null;
+  }
+  function kindLabel(kind) { const r = kindRole(kind); return r ? r.name : "—"; }
+  // player / session / discord のどれを渡してもよい
+  function kindOf(x) {
+    if (!x) return "";
+    const d = x.discord || x;
+    if (d && kindRole(d.kind)) return String(d.kind);
+    const roles = (Array.isArray(x.roles) && x.roles) ||
+                  (Array.isArray(d.roles) && d.roles) || [];
+    const hit = roles.find(r => r && kindRole(r.id));
+    return hit ? String(hit.id) : "";
+  }
+  // 立場を roles 配列にする（該当なしなら空配列）
+  function kindRolesOf(x) { const r = kindRole(kindOf(x)); return r ? [r] : []; }
+
   // ロール配列だけで運営かどうかを判定（Session.toPlayer から使う）
   function isStaffRoles(roles) {
     const ids = (((CFG.roles || {}).staffRoleIds) || []).map(x => String(x).trim()).filter(Boolean);
@@ -73,9 +108,120 @@
   }
 
   /* =============================================================
+     ★ グループ（合言葉）
+     参加者を物理的に分けるしくみ。
+
+     ・合言葉そのものはどこにも保存しません。
+       SHA-256 でハッシュにして、その先頭16桁を「グループキー」にします。
+     ・Firestore のボード文書IDに <グループキー>__ を付けるので、
+       別の合言葉のグループとはデータが一切混ざりません。
+     ・大会の索引も、グループごとに別の文書（g_<キー>）に分かれます。
+     ・参加者に配るURLには ?g=<グループキー> を付けます。
+       ハッシュなので、URLを見ても合言葉そのものは分かりません。
+     ============================================================= */
+  const GROUP_LS_KEY = LSP + "-groups";     // Firebaseを使わないときのグループ台帳
+
+  // 合言葉のゆらぎを吸収（前後の空白・全角半角・大文字小文字）
+  function normPass(pw) {
+    let t = String(pw == null ? "" : pw);
+    try { t = t.normalize("NFKC"); } catch (e) { }
+    return t.trim().replace(/\s+/g, " ").toLowerCase();
+  }
+  // 合言葉 → グループキー（16桁の英数字）
+  async function hashGroup(pw) {
+    const t = normPass(pw);
+    if (!t) throw new Error("合言葉を入力してください");
+    if (!(window.crypto && window.crypto.subtle)) {
+      throw new Error("この環境では合言葉を使えません（https で開いてください）");
+    }
+    const buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode("mcccup/g/" + t));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
+  }
+  function isGroupKey(k) { return /^[0-9a-f]{16}$/.test(String(k || "")); }
+
+  function localGroups() {
+    try { return JSON.parse(localStorage.getItem(GROUP_LS_KEY) || "{}") || {}; }
+    catch (e) { return {}; }
+  }
+  const Groups = {
+    normPass, hash: hashGroup, isKey: isGroupKey,
+    // そのグループが既にあるか → { exists, name, createdAt }
+    async get(gk) {
+      if (!isGroupKey(gk)) throw new Error("グループキーの形が正しくありません");
+      const db = openDb();
+      if (db) {
+        const snap = await db.collection(ICOL).doc("g_" + gk).get();
+        if (!snap.exists) return { exists: false, name: "", createdAt: 0 };
+        const d = snap.data() || {};
+        return { exists: true, name: d.name || "", createdAt: d.createdAt || 0, ownerId: d.ownerId || "" };
+      }
+      const g = localGroups()[gk];
+      return g ? { exists: true, name: g.name || "", createdAt: g.createdAt || 0, ownerId: g.ownerId || "" }
+               : { exists: false, name: "", createdAt: 0, ownerId: "" };
+    },
+    /* そのグループの主催をまだ誰も名乗っていなければ、この人を主催にする。
+       → 戻り値 true = あなたがこのグループの主催
+       （グループを作った人が、そのまま最初の入場で主催になります） */
+    async claimOwner(gk, discordId) {
+      const me = String(discordId || "");
+      if (!isGroupKey(gk) || !me) return false;
+      const db = openDb();
+      if (db) {
+        const ref = db.collection(ICOL).doc("g_" + gk);
+        const snap = await ref.get();
+        const cur = snap.exists ? (snap.data() || {}) : {};
+        if (!cur.ownerId) { await ref.set({ ownerId: me }, { merge: true }); return true; }
+        return String(cur.ownerId) === me;
+      }
+      const all = localGroups();
+      const g = all[gk] || (all[gk] = { name: "", createdAt: Date.now() });
+      if (!g.ownerId) {
+        g.ownerId = me;
+        try { localStorage.setItem(GROUP_LS_KEY, JSON.stringify(all)); } catch (e) { }
+        return true;
+      }
+      return String(g.ownerId) === me;
+    },
+    // 新しいグループを作る（合言葉は保存しない）
+    async create(gk, name) {
+      if (!isGroupKey(gk)) throw new Error("グループキーの形が正しくありません");
+      const nm = String(name || "").trim().slice(0, 40);
+      const rec = { name: nm, createdAt: Date.now() };
+      const db = openDb();
+      if (db) {
+        try { await db.collection(ICOL).doc("g_" + gk).set(Object.assign({ boards: {} }, rec), { merge: true }); }
+        catch (e) { throw new Error("グループを作れませんでした（" + (e.code || e.message) + "）。Firestore のルールに " + ICOL + " を追加しているか確認してください"); }
+      } else {
+        const all = localGroups();
+        all[gk] = rec;
+        try { localStorage.setItem(GROUP_LS_KEY, JSON.stringify(all)); } catch (e) { }
+      }
+      return rec;
+    },
+    // いまログイン中のグループ
+    current() {
+      const s = Session.get();
+      const g = (s && s.group) || null;
+      return (g && isGroupKey(g.key)) ? { key: g.key, name: g.name || "" } : null;
+    },
+    currentKey() { const g = this.current(); return g ? g.key : ""; }
+  };
+
+  /* グループで分けた保存先の名前 */
+  function gkOrThrow() {
+    const k = Groups.currentKey();
+    if (!k) throw new Error("グループが選ばれていません（ログインし直してください）");
+    return k;
+  }
+  function boardDocId(boardId) { return gkOrThrow() + "__" + boardId; }   // Firestore の文書ID
+  function registryDocId()     { return "g_" + gkOrThrow(); }            // 大会の索引
+  function lsBoardKey(boardId) { return LSP + ":" + gkOrThrow() + ":" + boardId; }
+  function lsIndexKey()        { return LSP + "-index:" + gkOrThrow(); }
+
+  /* =============================================================
      セッション（ログイン状態）
      ============================================================= */
-  const SESSION_KEY = "mcc-lb2-session";
+  const SESSION_KEY = LSP + "-session";   // ★ ポータル版（mcclb2-session）とは別物
   const Session = {
     get() {
       try { const raw = localStorage.getItem(SESSION_KEY); return raw ? JSON.parse(raw) : null; }
@@ -83,16 +229,35 @@
     },
     set(s) { try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) { } },
     clear() { try { localStorage.removeItem(SESSION_KEY); } catch (e) { } },
+    // ★ グループ（合言葉）＋ Riot ＋ Discord ＋ 立場 の4つがそろって「ログイン済み」。
+    //   足りない古いセッションは login.html に戻り、足りないぶんだけ埋めれば再入場できる。
     isComplete(s) {
+      s = s || this.get();
+      return !!(s && s.group && isGroupKey(s.group.key) &&
+                s.riot && s.riot.puuid && s.discord && s.discord.id && kindOf(s.discord));
+    },
+    group(s) {
+      s = s || this.get();
+      const g = (s && s.group) || null;
+      return (g && isGroupKey(g.key)) ? { key: g.key, name: g.name || "" } : null;
+    },
+    // Riot と Discord だけ済んでいるか（login.html の下書き復元用）
+    hasAccounts(s) {
       s = s || this.get();
       return !!(s && s.riot && s.riot.puuid && s.discord && s.discord.id);
     },
-    // 未ログインなら login.html へ（?board= を引き継ぐ）
+    kind(s) { s = s || this.get(); return kindOf(s && s.discord); },
+    // 未ログインなら login.html へ（?board= と ?g= を引き継ぐ）
     require() {
       if (this.isComplete()) return this.get();
       const p = new URLSearchParams(location.search);
-      const q = p.get("board") ? ("?board=" + encodeURIComponent(p.get("board"))) : "";
-      location.replace("login.html" + q);
+      const qs = [];
+      if (p.get("board")) qs.push("board=" + encodeURIComponent(p.get("board")));
+      // グループはURLの ?g= か、いま持っているセッションから引き継ぐ
+      const cur = this.get();
+      const gk = p.get("g") || ((cur && cur.group && cur.group.key) || "");
+      if (isGroupKey(gk)) qs.push("g=" + encodeURIComponent(gk));
+      location.replace("login.html" + (qs.length ? ("?" + qs.join("&")) : ""));
       return null;
     },
     // セッション → roster用プレイヤーへ変換
@@ -105,9 +270,14 @@
         riotId: s.riot.gameName + "#" + s.riot.tagLine,
         puuid: s.riot.puuid,
         rank: s.riot.rank || null,
-        discord: { id: s.discord.id, name: s.discord.name, username: s.discord.username, avatar: s.discord.avatar },
-        roles: Array.isArray(s.discord.roles) ? s.discord.roles : [],
-        staff: isStaffRoles(s.discord.roles),
+        discord: {
+          id: s.discord.id, name: s.discord.name,
+          username: s.discord.username, avatar: s.discord.avatar,
+          kind: kindOf(s.discord)
+        },
+        // ★ 持ち込むのは 先生 / 生徒 だけ。古いセッションのギルドロールはここで落とす。
+        roles: kindRolesOf(s.discord),
+        staff: isStaffRoles(kindRolesOf(s.discord)),
         updatedAt: Date.now()
       };
     },
@@ -143,6 +313,9 @@
   function isAdmin(session) {
     const s = session || Session.get();
     if (!s) return false;
+    // ★ そのグループ（合言葉）を作った人は、そのグループの主催。
+    //   config.js の admins に載っていなくても管理できます。
+    if (s.group && s.group.owner === true) return true;
     const c = adminConfig();
     if (!isAdminConfigured()) return true; // 未設定 = セットアップ中
 
@@ -262,9 +435,14 @@
     let applyingRemote = false, saveTimer = null;
     let actor = { pid: null, isAdmin: false };
     let selfSession = null;   // 自動参加させる本人のセッション（ensureSelf が使う）
-    const INDEX_LS_KEY = LSP + "-board-index";
+    // ★ 保存先はグループ（合言葉）ごとに分かれる。
+    //   init() の時点でグループキーを控えておく。こうしておけば、
+    //   別タブでログアウトされても、開いているこの画面が壊れない。
+    let gkey = "";
     const idxKey = id => encodeURIComponent(id);
-    const lsKey = () => LSP + ":" + boardId;
+    const lsKey = () => LSP + ":" + gkey + ":" + boardId;
+    const lsIdxKey = () => LSP + "-index:" + gkey;
+    const docIdOf = id => gkey + "__" + id;
 
     function getBoardId() {
       const p = new URLSearchParams(location.search);
@@ -288,6 +466,7 @@
     function guard(op) { return actor.isAdmin ? true : deny(op); }
 
     async function init() {
+      gkey = gkOrThrow();
       boardId = getBoardId();
       const fb = CFG.firebase || {};
       const hasFb = fb.apiKey && fb.projectId && typeof window.firebase !== "undefined" && firebase.firestore;
@@ -295,8 +474,8 @@
         try {
           if (!firebase.apps.length) firebase.initializeApp(fb);
           db = firebase.firestore();
-          docRef = db.collection(COL).doc(boardId);
-          indexRef = db.collection(ICOL).doc("registry");
+          docRef = db.collection(COL).doc(docIdOf(boardId));
+          indexRef = db.collection(ICOL).doc("g_" + gkey);
           mode = "firestore";
           const snap = await docRef.get();
           if (!snap.exists) await docRef.set(blankState());
@@ -349,7 +528,9 @@
         riotId: p.riotId || "", puuid: p.puuid || "",
         rank: p.rank || null,
         discord: p.discord || null,
-        roles: Array.isArray(p.roles) ? p.roles : [],
+        // ★ 先生 / 生徒 だけを残す（古いデータのギルドロールはここで消える）
+        roles: kindRolesOf(p),
+        kindLocked: !!p.kindLocked,
         joinedAt: p.joinedAt || 0, updatedAt: p.updatedAt || 0
       }));
       if (!Array.isArray(s.matches)) s.matches = buildMatches(s.matchCount, s.tableCount);
@@ -399,9 +580,9 @@
       try {
         if (mode === "firestore" && indexRef) await indexRef.set({ boards: { [idxKey(boardId)]: indexEntry() } }, { merge: true });
         else {
-          const idx = JSON.parse(localStorage.getItem(INDEX_LS_KEY) || "{}");
+          const idx = JSON.parse(localStorage.getItem(lsIdxKey()) || "{}");
           idx[boardId] = indexEntry();
-          localStorage.setItem(INDEX_LS_KEY, JSON.stringify(idx));
+          localStorage.setItem(lsIdxKey(), JSON.stringify(idx));
         }
       } catch (e) { console.error("index upsert failed", e); }
     }
@@ -411,7 +592,7 @@
         if (mode === "firestore" && indexRef) {
           const snap = await indexRef.get();
           if (snap.exists) Object.entries((snap.data() || {}).boards || {}).forEach(([k, v]) => { map[decodeURIComponent(k)] = v; });
-        } else map = JSON.parse(localStorage.getItem(INDEX_LS_KEY) || "{}");
+        } else map = JSON.parse(localStorage.getItem(lsIdxKey()) || "{}");
       } catch (e) { console.error("listBoards", e); map = {}; }
       if (!map[boardId]) map[boardId] = indexEntry();
       return Object.entries(map).map(([id, v]) => ({
@@ -488,6 +669,12 @@
         const prev = state.roster[i];
         const merged = Object.assign({}, prev, p, { joinedAt: prev.joinedAt || Date.now() });
         if (prev.nameLocked) { merged.name = prev.name; merged.nameLocked = true; }
+        // 管理者が立場（先生/生徒）を変えていたら、本人の再ログインで戻さない
+        if (prev.kindLocked) {
+          merged.roles = prev.roles;
+          merged.kindLocked = true;
+          if (merged.discord) merged.discord = Object.assign({}, merged.discord, { kind: kindOf(prev) });
+        }
         merged.optIn = !!prev.optIn;   // 管理者が付けた「参加させる」は再ログインで消さない
         state.roster[i] = merged;
       } else {
@@ -516,6 +703,23 @@
       const p = state.roster.find(x => x.id === pid);
       if (!p) return;
       Object.assign(p, patch, { updatedAt: Date.now() });
+      save();
+    }
+    /* 立場（先生/生徒）の手動変更。
+       "" を渡すとロック解除＝次回ログインで本人が選んだものに戻る。 */
+    function setPlayerKind(pid, kind) {
+      if (!guard("立場の変更")) return;
+      const p = state.roster.find(x => x.id === pid);
+      if (!p) return;
+      const r = kindRole(kind);
+      if (r) {
+        p.roles = [r];
+        p.kindLocked = true;
+        if (p.discord) p.discord = Object.assign({}, p.discord, { kind: r.id });
+      } else {
+        p.kindLocked = false;
+      }
+      p.updatedAt = Date.now();
       save();
     }
     // 表示名の手動設定（空文字でロック解除＝次回ログインでDiscord名に戻る）
@@ -654,10 +858,10 @@
       // 読み取り専用で別ボードの状態を取得
       return (async () => {
         if (mode === "firestore" && db) {
-          const snap = await db.collection(COL).doc(id).get();
+          const snap = await db.collection(COL).doc(docIdOf(id)).get();
           return snap.exists ? normalize(snap.data()) : null;
         }
-        const raw = localStorage.getItem(LSP + ":" + id);
+        const raw = localStorage.getItem(LSP + ":" + gkey + ":" + id);
         return raw ? normalize(JSON.parse(raw)) : null;
       })();
     }
@@ -844,7 +1048,7 @@
       get mode() { return mode; },
       get boardId() { return boardId; },
       setActor, getActor, canEdit,
-      setSettings, upsertSelf, updatePlayer, setPlayerName, removePlayer, setOptIn,
+      setSettings, upsertSelf, updatePlayer, setPlayerName, setPlayerKind, removePlayer, setOptIn,
       assignSeat, clearSeat, moveSeat, unseatPlayer, setPlacement, mergeMembers,
       clearMatchSeats, clearAllResults, resetBoard, importState, loadBoardState,
       setPresent, setAllPresent, setPresentByRole, autoAssign,
@@ -857,7 +1061,7 @@
      ボード一覧（HOME用）— 特定のボードを開かずに索引だけ読む
      makeStore().init() と違い、default ボードを作ってしまわない。
      ============================================================= */
-  const INDEX_LS_KEY_G = LSP + "-board-index";
+
   function openDb() {
     const fb = CFG.firebase || {};
     const hasFb = fb.apiKey && fb.projectId && typeof window.firebase !== "undefined" && firebase.firestore;
@@ -870,10 +1074,10 @@
     let map = {};
     try {
       if (db) {
-        const snap = await db.collection(ICOL).doc("registry").get();
+        const snap = await db.collection(ICOL).doc(registryDocId()).get();
         if (snap.exists) Object.entries((snap.data() || {}).boards || {}).forEach(([k, v]) => { map[decodeURIComponent(k)] = v; });
       } else {
-        map = JSON.parse(localStorage.getItem(INDEX_LS_KEY_G) || "{}");
+        map = JSON.parse(localStorage.getItem(lsIndexKey()) || "{}");
       }
     } catch (e) { console.error("listAllBoards", e); }
     return Object.entries(map).map(([id, v]) => ({
@@ -925,22 +1129,22 @@
     const db = openDb();
     if (db) {
       let snap;
-      try { snap = await db.collection(COL).doc(id).get(); }
+      try { snap = await db.collection(COL).doc(boardDocId(id)).get(); }
       catch (e) { throw new Error("Firestore を読めませんでした（" + (e.code || e.message) + "）。セキュリティルールに " + COL + " / " + ICOL + " を追加しているか確認してください"); }
       if (snap.exists) throw new Error("そのボードIDは既に使われています: " + id);
       try {
-        await db.collection(COL).doc(id).set(st);
-        await db.collection(ICOL).doc("registry")
+        await db.collection(COL).doc(boardDocId(id)).set(st);
+        await db.collection(ICOL).doc(registryDocId())
           .set({ boards: { [encodeURIComponent(id)]: entry } }, { merge: true });
       } catch (e) {
         throw new Error("Firestore に書き込めませんでした（" + (e.code || e.message) + "）");
       }
     } else {
-      if (localStorage.getItem(LSP + ":" + id)) throw new Error("そのボードIDは既に使われています: " + id);
-      localStorage.setItem(LSP + ":" + id, JSON.stringify(st));
-      const idx = JSON.parse(localStorage.getItem(INDEX_LS_KEY_G) || "{}");
+      if (localStorage.getItem(lsBoardKey(id))) throw new Error("そのボードIDは既に使われています: " + id);
+      localStorage.setItem(lsBoardKey(id), JSON.stringify(st));
+      const idx = JSON.parse(localStorage.getItem(lsIndexKey()) || "{}");
       idx[id] = entry;
-      localStorage.setItem(INDEX_LS_KEY_G, JSON.stringify(idx));
+      localStorage.setItem(lsIndexKey(), JSON.stringify(idx));
     }
     return id;
   }
@@ -953,18 +1157,18 @@
     const db = openDb();
     if (db) {
       try {
-        await db.collection(COL).doc(id).delete();
-        await db.collection(ICOL).doc("registry").set({
+        await db.collection(COL).doc(boardDocId(id)).delete();
+        await db.collection(ICOL).doc(registryDocId()).set({
           boards: { [encodeURIComponent(id)]: firebase.firestore.FieldValue.delete() }
         }, { merge: true });
       } catch (e) {
         throw new Error("削除に失敗しました（" + (e.code || e.message) + "）");
       }
     } else {
-      localStorage.removeItem(LSP + ":" + id);
-      const idx = JSON.parse(localStorage.getItem(INDEX_LS_KEY_G) || "{}");
+      localStorage.removeItem(lsBoardKey(id));
+      const idx = JSON.parse(localStorage.getItem(lsIndexKey()) || "{}");
       delete idx[id];
-      localStorage.setItem(INDEX_LS_KEY_G, JSON.stringify(idx));
+      localStorage.setItem(lsIndexKey(), JSON.stringify(idx));
     }
     return id;
   }
@@ -1211,28 +1415,11 @@
         return JSON.parse(decodeURIComponent(escape(atob(pad))));
       } catch (e) { return { ok: false, error: "コールバックの解析に失敗しました" }; }
     },
-    async guildRoles() {
-      return workerGet("/roles", {});
-    },
-    // Botトークンでギルドメンバーを引く（本人の再ログインを待たずにロールを最新化できる）
-    // → { inGuild, nick, roles:[{id,name,color}] }
-    async guildMember(userId) {
-      return workerGet("/member", { userId });
-    },
-    // ロール一覧のキャッシュ（名前・色の表示用。30分）
-    async rolesCached(force) {
-      const K = "mcc-lb2-roles-cache";
-      try {
-        const raw = localStorage.getItem(K);
-        if (raw && !force) {
-          const c = JSON.parse(raw);
-          if (c && Array.isArray(c.roles) && Date.now() - (c.at || 0) < 30 * 60 * 1000) return c.roles;
-        }
-      } catch (e) { }
-      const res = await this.guildRoles();
-      const roles = (res && res.roles) || [];
-      try { localStorage.setItem(K, JSON.stringify({ at: Date.now(), roles })); } catch (e) { }
-      return roles;
+    /* ★ この版はDiscordサーバーのロールを問い合わせません。
+       ロール一覧＝ 先生 / 生徒 の2つで固定です。
+       （Worker の /roles・/member は呼ばないので、Botの設定もサーバー参加も不要） */
+    async rolesCached() {
+      return KIND_ROLES.map(r => Object.assign({}, r));
     }
   };
 
@@ -1251,11 +1438,13 @@
 
   /* ---- 公開 ---- */
   window.LBCore = {
-    VERSION: "cup-1.2",           // 各ページはこれを見て core.js が古くないか判定する
+    VERSION: "cup-1.4",           // 各ページはこれを見て core.js が古くないか判定する
     SEATS_PER_TABLE,
     pointsFor, makeStore,
     playerById, nameOf, avatarOf,
     hasRole, rosterRoles, roleColorCss, fallbackRoleCatalog,
+    KIND_ROLES, kindRole, kindLabel, kindOf, kindRolesOf,
+    Groups,
     isStaff, isParticipant, participants, staffRoleIds,
     isAdmin, isAdminConfigured, adminConfig,
     normVisibility, canViewBoard, visibilityLabel,

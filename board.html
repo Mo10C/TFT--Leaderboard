@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<link rel="stylesheet" href="ui.css?v=cup12">
+<link rel="stylesheet" href="ui.css?v=cup14">
 <style>
 /* ===== 大会ボード固有のスタイル =====
    共通の部品（ヘッダー・ボタン・カード・入力欄・トースト）は ui.css。
@@ -37,7 +37,7 @@
 .me .mname{font-size:12.5px;font-weight:700;line-height:1.25}
 .me .mrank{font-size:10.5px;font-weight:700;line-height:1.25}
 
-/* ---- ロールで絞り込む ---- */
+/* ---- 立場で絞り込む ---- */
 .rolebar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:12px}
 .rolebar .lbl{font-size:12px;font-weight:700;color:var(--muted);margin-right:2px}
 .rchip{display:inline-flex;align-items:center;gap:7px;height:29px;padding:0 12px;
@@ -240,7 +240,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
 <div id="lockWrap">
   <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h8"/><path d="M14 3v18"/><path d="M18 8l3 4-3 4"/><path d="M21 12h-7"/></svg></div>
   <h2>この大会は公開範囲が限定されています</h2>
-  <p>入場には、主催が指定した Discord ロールが必要です。</p>
+  <p>入場には、主催が指定した立場（先生 / 生徒）が必要です。</p>
   <div class="need" id="lockNeed"></div>
   <p id="lockWho" style="font-size:11.5px"></p>
   <div style="margin-top:14px">
@@ -255,7 +255,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
       <div class="brandmark"><img src="assets/mark.png" alt="TFT リーダーボード" onerror="this.parentNode.classList.add('noimg');this.remove()"></div>
       <div>
         <h1 id="boardTitle">TFT リーダーボード</h1>
-        <div class="sub">大会・スクリム用 ｜ <span id="boardIdLabel" class="num">default</span></div>
+        <div class="sub"><span id="grpLabel">大会・スクリム用</span> ｜ <span id="boardIdLabel" class="num">default</span></div>
       </div>
     </div>
     <span class="badge" id="syncBadge">— 接続中…</span>
@@ -284,7 +284,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
     <span class="viewnote" id="viewNote" style="display:none">閲覧モード ・ 設定の変更は主催のみ</span>
   </div>
 
-  <!-- ロールフィルタ -->
+  <!-- 立場フィルタ -->
   <div class="rolebar" id="rolebar"></div>
 
   <!-- 参加者 -->
@@ -303,13 +303,13 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
       <select id="assignMethod">
         <option value="random">完全ランダム</option>
         <option value="points">pt近い順（2試合目〜）</option>
-        <option value="roleBalance">ロールを各卓に均等分散</option>
-        <option value="roleGroup">同ロールを同卓に固める</option>
+        <option value="roleBalance">先生 / 生徒 を各卓に均等分散</option>
+        <option value="roleGroup">同じ立場どうしを同卓に固める</option>
       </select>
       <select id="assignRole" style="display:none"></select>
       <button class="mini grad" id="assignBtn">実行</button>
       <button class="mini" id="clearSeatsBtn">配置クリア</button>
-      <span class="hint">「均等分散」= 例）コーチロールを各卓1人ずつ配る／「固める」= 同ロール同卓</span>
+      <span class="hint">「均等分散」= 例）先生を各卓1人ずつ配る／「固める」= 先生は先生、生徒は生徒で同卓</span>
     </div>
   </div>
 
@@ -330,7 +330,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
 <div id="toast"></div>
 
 <script src="config.js"></script>
-<script src="core.js?v=cup12"></script>
+<script src="core.js?v=cup14"></script>
 <script>
 (function(){
   const C = window.LBCore;
@@ -380,7 +380,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
   /* ---- UIローカル状態 ---- */
   let curMatch = 0;          // 選択中タブ（matchCount = 結果タブ）
   let selectedPid = null;    // 配置用に選択中の選手
-  let roleFilter = null;     // 表示フィルタ中のロールID
+  let roleFilter = null;     // 絞り込み中の立場ID（teacher / student）
 
   /* ---- Store ---- */
   const store = C.makeStore();
@@ -416,7 +416,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
   applyPermissions();
 
   store.init().then(({mode, boardId}) => {
-    /* ---- 公開範囲チェック（ロールで限定されたボードは入れない）---- */
+    /* ---- 公開範囲チェック（立場で限定されたボードは入れない）---- */
     if (!C.canViewBoard(store.state.visibility, session)){
       $("mainWrap").style.display = "none";
       $("lockWrap").style.display = "";
@@ -428,10 +428,14 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
     }
 
     $("boardIdLabel").textContent = boardId;
+    // いま入っているグループ（合言葉）を表示する
+    const g = C.Groups.current();
+    $("grpLabel").textContent = g ? (g.name || "グループ " + g.key.slice(0, 6)) : "大会・スクリム用";
+    $("grpLabel").title = g ? ("グループID " + g.key + "（合言葉が同じ人だけがここに集まります）") : "";
     const badge = $("syncBadge");
     if (mode === "firestore"){ badge.textContent = "● LIVE 共有中"; badge.classList.add("live"); }
     else badge.textContent = "ローカル保存モード";
-    // 自分を選手登録（最新のランク・ロールで上書き。権限に関係なく自己登録は可能）
+    // 自分を選手登録（最新のランク・立場で上書き。権限に関係なく自己登録は可能）
     store.upsertSelf(session);
     // 管理リンクにboardを引き継ぐ
     if (boardId !== "default") $("editorLink").href = "admin.html?board=" + encodeURIComponent(boardId);
@@ -439,7 +443,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
   });
   store.onChange(render);
 
-  /* 必要なロールをチップで見せる（名前が引ければ名前、駄目ならID） */
+  /* 入場に必要な立場をチップで見せる */
   function renderNeed(catalog){
     const v = C.normVisibility(store.state.visibility);
     const lab = C.visibilityLabel(v, catalog);
@@ -453,10 +457,20 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
     });
   }
 
+  /* 参加者に配るURL。?g=<グループキー> を付けるので、
+     受け取った人は合言葉を入力しなくても同じグループに入れます。
+     キーはハッシュなので、URLから合言葉そのものは分かりません。 */
+  function shareUrl(){
+    const base = location.origin + location.pathname.replace(/board\.html$/, "login.html");
+    const qs = [];
+    if (store.boardId !== "default") qs.push("board=" + encodeURIComponent(store.boardId));
+    const g = C.Groups.current();
+    if (g) qs.push("g=" + encodeURIComponent(g.key));
+    return base + (qs.length ? ("?" + qs.join("&")) : "");
+  }
   $("shareBtn").onclick = async () => {
-    const url = location.origin + location.pathname.replace(/board\.html$/, "login.html") +
-      (store.boardId !== "default" ? "?board="+encodeURIComponent(store.boardId) : "");
-    try { await navigator.clipboard.writeText(url); toast("ログインページのリンクをコピーしました"); }
+    const url = shareUrl();
+    try { await navigator.clipboard.writeText(url); toast("ログインページのリンクをコピーしました（合言葉なしで入れます）"); }
     catch(e){ prompt("このリンクを共有:", url); }
   };
 
@@ -476,9 +490,9 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
   $("allOff").onclick = () => { if (curMatch < store.state.matchCount && confirm("この試合の参加者を全員外します。席と順位もクリアされます。")) store.setAllPresent(curMatch, false); };
   $("filterOn").onclick = () => {
     if (curMatch >= store.state.matchCount) return;
-    if (!roleFilter){ toast("先にロールフィルタを選択してください"); return; }
+    if (!roleFilter){ toast("先に 先生 / 生徒 の絞り込みを選んでください"); return; }
     store.setPresentByRole(curMatch, roleFilter);
-    toast("表示中ロールの保持者だけを参加にしました");
+    toast("表示中の人だけを参加にしました");
   };
 
   /* ---- 自動組卓 ---- */
@@ -490,7 +504,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
     if (curMatch >= store.state.matchCount) return;
     const method = $("assignMethod").value;
     const roleId = $("assignRole").value || null;
-    if (method === "roleBalance" && !roleId){ toast("分散するロールを選択してください"); return; }
+    if (method === "roleBalance" && !roleId){ toast("分散する立場を選んでください"); return; }
     const r = store.autoAssign(curMatch, { method, roleId });
     if (r) toast(`配置しました（${r.assigned}人${r.dropped ? " / 溢れ"+r.dropped+"人" : ""}）`);
   };
@@ -525,14 +539,14 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
     else { renderPops(s); renderTables(s); }
   }
 
-  /* ---- ロールバー ---- */
+  /* ---- 立場バー ---- */
   function renderRoleBar(s){
     const bar = $("rolebar");
     bar.innerHTML = "";
     const roles = C.rosterRoles(s);
     const lbl = document.createElement("span");
     lbl.className = "lbl";
-    lbl.textContent = "🎭 ロール:";
+    lbl.textContent = "立場:";
     bar.appendChild(lbl);
 
     const allChip = mkChip("すべて", null, s.roster.length, roleFilter === null);
@@ -548,7 +562,7 @@ body.viewer .pop:hover{transform:none;box-shadow:inset 0 0 0 1px var(--hairline-
     // 自動組卓のロール選択も更新
     const sel = $("assignRole");
     const prev = sel.value;
-    sel.innerHTML = '<option value="">（ロールを選択）</option>' +
+    sel.innerHTML = '<option value="">（立場を選択）</option>' +
       roles.map(r => `<option value="${r.id}">${escapeHtml(r.name)}（${r.count}人）</option>`).join("");
     if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
 

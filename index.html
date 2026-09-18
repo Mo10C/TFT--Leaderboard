@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="ui.css?v=cup12">
+<link rel="stylesheet" href="ui.css?v=cup14">
 <style>
 /* ===== 入口（使い方 ＋ ログインへの導線）===== */
 .wrap{max-width:980px}
@@ -169,24 +169,38 @@
   <!-- ============ 参加する人 ============ -->
   <div class="chap">
     <h3><span class="n">1</span> 参加する人の使い方</h3>
-    <div class="cl">やることは3つだけ。1分で終わります。</div>
+    <div class="cl">やることは5つだけ。1分で終わります。</div>
     <div class="steps">
-      <div class="step" style="--tint:var(--sky)">
+      <div class="step" style="--tint:var(--coral)">
         <div class="sn">STEP 1</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V8a3 3 0 0 1 6 0v3"/><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M12 15v2"/></svg></div>
+        <h4>合言葉を入れる</h4>
+        <p>主催から聞いた<b>合言葉</b>を入れます。同じ合言葉の人だけが同じボードに集まります。
+          合言葉入りのURLをもらった場合は、入力なしで進めます。</p>
+      </div>
+      <div class="step" style="--tint:var(--sky)">
+        <div class="sn">STEP 2</div>
         <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 11h4M8.5 9v4"/><circle cx="15.5" cy="10.2" r=".9" fill="currentColor" stroke="none"/><circle cx="17.6" cy="12.6" r=".9" fill="currentColor" stroke="none"/><path d="M7.4 5.5h9.2a4.4 4.4 0 0 1 4.3 3.5l1 5a3.3 3.3 0 0 1-6.1 2.3L15 15H9l-.8 1.3A3.3 3.3 0 0 1 2.1 14l1-5a4.4 4.4 0 0 1 4.3-3.5z"/></svg></div>
         <h4>Riot ID を入れる</h4>
         <p>ゲーム内の <b>Name#TAG</b>（例: Mo10C#819）を入力して「確認する」。
           いまのランクが自動で取れます。</p>
       </div>
       <div class="step" style="--tint:var(--navy)">
-        <div class="sn">STEP 2</div>
+        <div class="sn">STEP 3</div>
         <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8 8 0 0 1-8.6 8 9 9 0 0 1-3.4-.7L3 21l1.4-4.2A8 8 0 0 1 12.4 3.5 8 8 0 0 1 21 11.5z"/></svg></div>
         <h4>Discord でログイン</h4>
-        <p>名前・アイコン・<b>ロール</b>を読み取ります。
-          ロールは組卓の絞り込みや振り分けに使われます。</p>
+        <p>読み取るのは<b>名前とアイコンだけ</b>です。
+          サーバーのロールは見ないので、参加していなくてかまいません。</p>
+      </div>
+      <div class="step" style="--tint:var(--gold)">
+        <div class="sn">STEP 4</div>
+        <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5l9-4 9 4-9 4-9-4z"/><path d="M7 10v5c0 1.7 2.2 3 5 3s5-1.3 5-3v-5"/><path d="M21 7.5V14"/></svg></div>
+        <h4>先生 / 生徒 を選ぶ</h4>
+        <p>これが<b>ロール代わり</b>になります。参加者の絞り込み・自動組卓・公開範囲で使われます。
+          あとから主催に変えてもらえます。</p>
       </div>
       <div class="step" style="--tint:var(--leaf)">
-        <div class="sn">STEP 3</div>
+        <div class="sn">STEP 5</div>
         <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21h10M12 17v4M5 4h14v5a7 7 0 0 1-14 0z"/><path d="M5 6H3.5A1.5 1.5 0 0 0 2 7.5 3.5 3.5 0 0 0 5.5 11M19 6h1.5A1.5 1.5 0 0 1 22 7.5 3.5 3.5 0 0 1 18.5 11"/></svg></div>
         <h4>入場する</h4>
         <p>押すだけで<b>選手として登録</b>され、参加者バーに並びます。
@@ -424,17 +438,43 @@
         </div>
       </details>
       <details>
-        <summary>特定のロールの人だけ入れるようにしたい</summary>
+        <summary>合言葉って何ですか</summary>
         <div class="a">
-          管理画面の<b>「この大会」→ 公開範囲</b>で「指定ロールの保持者だけ」を選び、
-          ロールを選んで保存します。管理者はいつでも入れます。
+          参加者を<b>グループごとに完全に分ける</b>ためのものです。
+          合言葉が違えば、参加者一覧も大会も全部べつの場所になり、混ざることはありません。
+          複数のコミュニティが同時に使っても、おたがいの参加者は見えません。<br>
+          合言葉そのものは保存されません（ハッシュだけが残ります）。
         </div>
       </details>
       <details>
-        <summary>運営は参加者に入れたくない</summary>
+        <summary>合言葉を作りたい／忘れた</summary>
         <div class="a">
-          <code>config.js</code> の <b>roles.staffRoleIds</b> に運営ロールのIDを入れると、
-          その人は「見るだけの人」になり、参加者・組卓・全体順位に入らなくなります。
+          ログイン画面でまだ無い合言葉を入れると「新しく作りますか？」と聞かれます。
+          作った人がそのグループの主催になります。<br>
+          <b>合言葉は復元できません。</b>忘れたときは、そのグループの誰かが持っている
+          <b>合言葉入りのURL（?g=…）</b>から入ってください。
+          誰も持っていない場合は、新しい合言葉で作り直すことになります。
+        </div>
+      </details>
+      <details>
+        <summary>先生 / 生徒 を間違えて選んでしまった</summary>
+        <div class="a">
+          主催が管理画面の<b>「メンバー」</b>で切り替えられます。
+          自分でログインし直して選び直してもOKです（主催が変えた場合はそちらが優先されます）。
+        </div>
+      </details>
+      <details>
+        <summary>先生だけ入れるようにしたい</summary>
+        <div class="a">
+          管理画面の<b>「この大会」→ 公開範囲</b>で「指定ロールの保持者だけ」を選び、
+          <b>先生</b>にチェックして保存します。管理者はいつでも入れます。
+        </div>
+      </details>
+      <details>
+        <summary>先生は参加者に入れたくない（見るだけにしたい）</summary>
+        <div class="a">
+          <code>config.js</code> の <b>roles.staffRoleIds</b> に <code>"teacher"</code> を入れると、
+          先生は「見るだけの人」になり、参加者・組卓・全体順位に入らなくなります。
           出てもらうときは管理画面の「メンバー」で<b>「大会に参加」</b>をONにしてください。
         </div>
       </details>
@@ -482,7 +522,10 @@
   let signedIn = false, who = "";
   try {
     const s = JSON.parse(localStorage.getItem("mcc-lb2-session") || "null");
-    if (s && s.discord && s.discord.id && s.riot && s.riot.puuid){
+    // 立場（先生/生徒）まで入っていて初めて「ログイン済み」。
+    // 古いセッションはログイン画面に送り、選び直してもらう。
+    if (s && s.discord && s.discord.id && s.riot && s.riot.puuid &&
+        (s.discord.kind === "teacher" || s.discord.kind === "student")){
       signedIn = true;
       who = s.discord.name || s.discord.username || "";
     }

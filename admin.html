@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="ui.css?v=cup12">
+<link rel="stylesheet" href="ui.css?v=cup14">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
@@ -51,6 +51,7 @@
 .mrow .sub{font-size:11.5px;color:var(--muted);line-height:1.5;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mrow input[type=text]{width:160px;flex:none;height:34px;font-size:12.5px}
+.mrow .kindsel{width:150px;flex:none;height:34px;font-size:12.5px}
 .mrow .staffbadge{display:inline-flex;align-items:center;height:20px;padding:0 8px;
   font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--accent-deep);
   border-radius:var(--r-full);white-space:nowrap;
@@ -92,6 +93,7 @@
 
 @media (max-width:620px){
   .mrow input[type=text]{width:100%;order:9}
+  .mrow .kindsel{width:100%;order:10}
   .tab{padding:0 12px;font-size:12px}
 }
 </style>
@@ -113,7 +115,7 @@
       <div class="brandmark"><img src="assets/mark.png" alt="TFT リーダーボード" onerror="this.parentNode.classList.add('noimg');this.remove()"></div>
       <div>
         <h1>管理</h1>
-        <div class="sub">TFT リーダーボード ｜ <span class="num" id="curBoardBadge">—</span></div>
+        <div class="sub"><span id="grpLabel">TFT リーダーボード</span> ｜ <span class="num" id="curBoardBadge">—</span></div>
       </div>
     </div>
     <span class="badge" id="syncBadge">— 接続中…</span>
@@ -158,11 +160,11 @@
     <div class="card">
       <h2>公開範囲</h2>
       <div class="lead">
-        ロールを指定すると、そのロールを持つ人だけが入場できます。管理者は常に入場できます。
+        <b>先生 / 生徒</b>のどちらかに限定できます（ログイン時に本人が選んだもの）。管理者は常に入場できます。
       </div>
       <div class="row">
         <label class="chk"><input type="radio" name="visMode" id="visAll"> ログインした全員が入れる</label>
-        <label class="chk"><input type="radio" name="visMode" id="visRoles"> 指定ロールの保持者だけ</label>
+        <label class="chk"><input type="radio" name="visMode" id="visRoles"> 選んだ立場の人だけ</label>
       </div>
       <div id="visPicker" style="display:none">
         <div class="rolefield" id="visField"></div>
@@ -181,11 +183,12 @@
       <div class="lead">
         ログインして入場した人がここに並びます。<br>
         ・<b>表示名</b>を入れると、その人が再ログインしても名前が変わりません（空にすると解除）<br>
-        ・<b>大会に参加</b>… 運営ロールの人を参加者として扱いたいときにONにします<br>
+        ・<b>先生 / 生徒</b>… 本人が選んだ立場を変えられます（変えると再ログインしても戻りません）<br>
+        ・<b>大会に参加</b>… 見るだけ扱いの人を参加者として扱いたいときにONにします<br>
         ・<b>除名</b>すると席と順位からも外れます（また入場すれば戻ってきます）
       </div>
       <div class="row">
-        <button class="mini" id="refreshRanks">ランクとロールを再取得</button>
+        <button class="mini" id="refreshRanks">ランクを再取得</button>
         <span class="hint">Riot APIを人数ぶん呼ぶので少し時間がかかります</span>
       </div>
       <div id="memberList" style="margin-top:9px"></div>
@@ -198,7 +201,7 @@
       <h2>＋ 新しい大会を作る</h2>
       <div class="lead">
         大会ごとにボードを分けられます。作ると、その大会のIDが付いたURLができます。<br>
-        参加者に配るのは <b>login.html?board=&lt;ID&gt;</b> です。
+        参加者に配るのは <b>login.html?board=&lt;ID&gt;&amp;g=&lt;グループキー&gt;</b> です。
       </div>
       <div class="row">
         <label style="min-width:56px">大会名</label>
@@ -243,7 +246,7 @@
 
     <div class="card">
       <h2>保存先</h2>
-      <div class="lead">この版が読み書きしている場所です。ポータル版とは別になっています。</div>
+      <div class="lead">この版が読み書きしている場所です。ポータル版とも、ほかのグループとも別になっています。</div>
       <div id="collInfo" class="hint"></div>
     </div>
   </div>
@@ -280,7 +283,7 @@
 <div id="toast"></div>
 
 <script src="config.js"></script>
-<script src="core.js?v=cup12"></script>
+<script src="core.js?v=cup14"></script>
 <script>
 (function(){
   "use strict";
@@ -336,11 +339,12 @@
   /* ---- Store ---- */
   const store = C.makeStore();
   store.setActor({ pid: "u_" + session.discord.id, isAdmin: true });
-  let roleCatalog = [];
-  let catalogOk = false;
 
   store.init().then(({ mode, boardId }) => {
     $("curBoardBadge").textContent = boardId;
+    const g = C.Groups.current();
+    $("grpLabel").textContent = g ? (g.name || "グループ " + g.key.slice(0, 6)) : "TFT リーダーボード";
+    $("grpLabel").title = g ? ("グループID " + g.key) : "";
     const b = $("syncBadge");
     if (mode === "firestore"){
       b.textContent = "● LIVE 共有中";
@@ -352,7 +356,7 @@
     if (boardId !== "default") $("boardLink").href = "board.html?board=" + encodeURIComponent(boardId);
     render();
     renderBoardList();
-    loadCatalog();
+
     fillConn();
   });
   store.onChange(render);
@@ -374,7 +378,7 @@
     $("visRoles").checked = (v.mode === "roles");
     $("visPicker").style.display = (v.mode === "roles") ? "" : "none";
     $("visHint").textContent = v.mode === "roles"
-      ? (v.roleIds.length + "個のロールを許可中")
+      ? (v.roleIds.map(id => C.kindLabel(id)).join("・") + " だけ入場できます")
       : "いまは全員が入れます";
     renderMembers();
     updateShare();
@@ -400,12 +404,12 @@
     if (!visPaint){
       visIds = C.normVisibility(store.state.visibility).roleIds.slice();
       visPaint = roleField($("visField"), () => visIds, ids => { visIds = ids; },
-        "入場を許可するロール（いずれか1つ持っていれば入れます）");
+        "入場を許可する立場（どちらかを選んでください）");
     } else visPaint();
   };
   $("saveVis").onclick = () => {
     if ($("visRoles").checked){
-      if (!visIds.length){ toast("ロールを1つ以上選んでください"); return; }
+      if (!visIds.length){ toast("先生 / 生徒 のどちらかを選んでください"); return; }
       store.setVisibility({ mode: "roles", roleIds: visIds.slice() });
     } else {
       store.setVisibility({ mode: "all", roleIds: [] });
@@ -416,40 +420,21 @@
   /* =============================================================
      ロール選択フィールド
      ============================================================= */
-  function roleList(extraIds){
-    return catalogOk ? roleCatalog : C.fallbackRoleCatalog(session, extraIds || [], store.state);
-  }
+  /* この版のロールは 先生 / 生徒 の2つだけ。Discordには問い合わせません。 */
   function roleField(container, getIds, setIds, labelText){
     container.innerHTML = "";
     const lbl = document.createElement("div");
     lbl.className = "lbl";
-    lbl.textContent = labelText || "ロール（未選択＝全員）";
+    lbl.textContent = labelText || "立場（未選択＝全員）";
     container.appendChild(lbl);
     const chips = document.createElement("div");
     chips.className = "rolepick";
     container.appendChild(chips);
-    const note = document.createElement("div");
-    note.className = "hint";
-    note.style.marginTop = "6px";
-    container.appendChild(note);
-    const addRow = document.createElement("div");
-    addRow.className = "row";
-    addRow.style.marginTop = "8px";
-    const inp = document.createElement("input");
-    inp.type = "text";
-    inp.placeholder = "ロールIDを貼って追加（17〜20桁）";
-    inp.style.minWidth = "230px";
-    const btn = document.createElement("button");
-    btn.className = "mini";
-    btn.textContent = "追加";
-    addRow.appendChild(inp); addRow.appendChild(btn);
-    container.appendChild(addRow);
 
     function paint(){
       const ids = getIds();
-      const list = roleList(ids);
       chips.innerHTML = "";
-      list.forEach(r => {
+      C.KIND_ROLES.forEach(r => {
         const on = ids.includes(String(r.id));
         const el = document.createElement("span");
         el.className = "rp" + (on ? " on" : "");
@@ -457,7 +442,7 @@
         dot.className = "dot";
         dot.style.background = C.roleColorCss(r.color);
         el.appendChild(dot);
-        el.appendChild(document.createTextNode((on ? "✓ " : "") + (r.name || r.id)));
+        el.appendChild(document.createTextNode((on ? "✓ " : "") + r.name));
         el.onclick = () => {
           const cur = getIds().slice();
           const i = cur.indexOf(String(r.id));
@@ -466,28 +451,9 @@
         };
         chips.appendChild(el);
       });
-      if (!list.length) chips.innerHTML = '<span class="hint">ロールがありません。下の欄にIDを貼って追加してください。</span>';
-      note.textContent = catalogOk ? "" :
-        "⚠️ Discordからロール一覧を取得できていないため、判明しているぶんだけ表示しています。";
     }
-    btn.onclick = () => {
-      const raw = inp.value.trim();
-      if (!/^\d{17,20}$/.test(raw)){ toast("ロールIDは17〜20桁の数字です"); return; }
-      const cur = getIds().slice();
-      if (cur.includes(raw)){ toast("すでに選択されています"); return; }
-      cur.push(raw); setIds(cur); inp.value = ""; paint();
-    };
-    inp.addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); btn.onclick(); } });
     paint();
     return paint;
-  }
-
-  async function loadCatalog(){
-    try {
-      roleCatalog = await C.DiscordAuth.rolesCached();
-      catalogOk = !!(roleCatalog && roleCatalog.length);
-    } catch(e){ catalogOk = false; }
-    if (visPaint) visPaint();
   }
 
   /* =============================================================
@@ -521,7 +487,7 @@
         const sb = document.createElement("span");
         sb.className = "staffbadge";
         sb.textContent = "運営";
-        sb.title = "運営ロールの人は、大会の参加者に入りません";
+        sb.title = "見るだけ扱いの人は、大会の参加者に入りません";
         nm.appendChild(document.createTextNode(" "));
         nm.appendChild(sb);
       }
@@ -541,6 +507,30 @@
         toast(ni.value.trim() ? "表示名を固定しました" : "表示名の固定を解除しました");
       };
       row.appendChild(ni);
+
+      // 立場（先生 / 生徒）。変えると kindLocked が立ち、本人の再ログインで戻らない。
+      const ks = document.createElement("select");
+      ks.className = "kindsel";
+      ks.title = "この人の立場。変えると本人が再ログインしても戻りません（「本人の選択にもどす」で解除）。";
+      const cur = C.kindOf(p);
+      [["", "立場なし"]].concat(C.KIND_ROLES.map(r => [r.id, r.name]))
+        .concat(p.kindLocked ? [["__free", "本人の選択にもどす"]] : [])
+        .forEach(([v, t]) => {
+          const o = document.createElement("option");
+          o.value = v; o.textContent = t;
+          if (v === cur) o.selected = true;
+          ks.appendChild(o);
+        });
+      ks.onchange = () => {
+        if (ks.value === "__free"){
+          store.setPlayerKind(p.id, "");
+          toast("本人の選択にもどしました（次のログインで反映）");
+        } else {
+          store.setPlayerKind(p.id, ks.value);
+          toast(ks.value ? (C.kindLabel(ks.value) + " にしました") : "立場を外しました");
+        }
+      };
+      row.appendChild(ks);
 
       if (C.isStaff(p)){
         const oi = document.createElement("label");
@@ -584,7 +574,7 @@
       await new Promise(r => setTimeout(r, 250));
     }
     btn.disabled = false;
-    btn.textContent = "ランクとロールを再取得";
+    btn.textContent = "ランクを再取得";
     toast("再取得: 成功" + ok + (ng ? " / 失敗" + ng : ""));
   };
 
@@ -671,11 +661,17 @@
     $("wkUrl").value = eff.workerUrl || "";
     const cfg = window.MCC_LB_CONFIG || {};
     const col = cfg.collections || {};
+    const g = C.Groups.current();
+    const gk = g ? g.key : "&lt;グループキー&gt;";
     $("collInfo").innerHTML =
-      "大会ボード: <code>" + esc(col.boards || "lboards") + "/&lt;大会ID&gt;</code><br>" +
-      "大会の索引: <code>" + esc(col.index || "lboard_index") + "/registry</code><br>" +
-      "ローカル保存のキー: <code>" + esc(col.prefix || "mcclb2") + ":&lt;大会ID&gt;</code><br><br>" +
-      "ポータル版（lboards / lboard_index）とは別なので、データは混ざりません。";
+      "いまのグループ: <b>" + esc(g ? (g.name || "（名前なし）") : "—") + "</b> " +
+        "<code>" + esc(gk) + "</code><br><br>" +
+      "大会ボード: <code>" + esc(col.boards || "lboards") + "/" + esc(gk) + "__&lt;大会ID&gt;</code><br>" +
+      "大会の索引: <code>" + esc(col.index || "lboard_index") + "/g_" + esc(gk) + "</code><br>" +
+      "ローカル保存のキー: <code>" + esc(col.prefix || "mcclb2") + ":" + esc(gk) + ":&lt;大会ID&gt;</code><br>" +
+      "ログイン情報のキー: <code>" + esc(col.prefix || "mcclb2") + "-session</code><br><br>" +
+      "・ポータル版（lboards / lboard_index / mcclb2-session）とは別物です。<br>" +
+      "・合言葉が違えば先頭のキーも変わるので、グループどうしも混ざりません。";
   }
   $("wkSave").onclick = () => {
     C.RiotConfig.setOverride({ workerUrl: $("wkUrl").value.trim() });
@@ -752,9 +748,15 @@
   };
 
   /* ---- 参加者に配るURL ---- */
+  /* ?g=<グループキー> を付けると、受け取った人は合言葉なしで入れます。
+     キーはハッシュなので、URLから合言葉そのものは分かりません。 */
   function shareUrl(){
     const base = location.origin + location.pathname.replace(/admin\.html$/, "login.html");
-    return base + (store.boardId !== "default" ? "?board=" + encodeURIComponent(store.boardId) : "");
+    const qs = [];
+    if (store.boardId !== "default") qs.push("board=" + encodeURIComponent(store.boardId));
+    const g = C.Groups.current();
+    if (g) qs.push("g=" + encodeURIComponent(g.key));
+    return base + (qs.length ? ("?" + qs.join("&")) : "");
   }
   function updateShare(){
     $("shareHint").textContent = shareUrl();
