@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="ui.css?v=cup142">
+<link rel="stylesheet" href="ui.css?v=cup15">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
@@ -128,6 +128,7 @@
   <div class="tabs">
     <button class="tab on" data-panel="p-board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21h10M12 17v4M5 4h14v5a7 7 0 0 1-14 0z"/><path d="M5 6H3.5A1.5 1.5 0 0 0 2 7.5 3.5 3.5 0 0 0 5.5 11M19 6h1.5A1.5 1.5 0 0 1 22 7.5 3.5 3.5 0 0 1 18.5 11"/></svg>この大会</button>
     <button class="tab" data-panel="p-members"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.6a3.4 3.4 0 0 0-3.4-3.4H6.4A3.4 3.4 0 0 0 3 18.4V20"/><circle cx="9.5" cy="7.5" r="3.4"/><path d="M21 20v-1.6a3.4 3.4 0 0 0-2.6-3.3M15.5 4.3a3.4 3.4 0 0 1 0 6.4"/></svg>メンバー</button>
+    <button class="tab" data-panel="p-teams"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3.2"/><circle cx="16" cy="8" r="3.2"/><path d="M2.8 19v-1.2A3.6 3.6 0 0 1 6.4 14.2h3.2"/><path d="M21.2 19v-1.2a3.6 3.6 0 0 0-3.6-3.6h-3.2"/><path d="M12 14.6v5"/></svg>チーム</button>
     <button class="tab" data-panel="p-list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.4h9A1.5 1.5 0 0 1 21 9.9v8.6a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></svg>大会の管理</button>
     <button class="tab" data-panel="p-conn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v5M15 3v5"/><path d="M7 8h10v4a5 5 0 0 1-10 0z"/><path d="M12 17v4"/></svg>接続設定</button>
     <button class="tab" data-panel="p-data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M8 4v5h7"/><path d="M8 14h8v7H8z"/></svg>データ</button>
@@ -141,6 +142,20 @@
       <div class="row">
         <input type="text" id="titleInput" style="flex:1;min-width:220px" placeholder="第1回 カップ戦">
         <button class="mini grad" id="saveTitle">保存</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>形式</h2>
+      <div class="lead">
+        <b>個人戦</b>は1卓8人。<b>ダブルアップ</b>は2人1組で1卓4チーム（＝8人）です。<br>
+        ⚠️ 形式を変えると、<b>いまの配置と順位はすべて消えます</b>（ペアの設定は残ります）。
+      </div>
+      <div class="row">
+        <label class="chk"><input type="radio" name="bmode" id="modeSolo"> 個人戦</label>
+        <label class="chk"><input type="radio" name="bmode" id="modeDouble"> ダブルアップ（2人1組）</label>
+        <button class="mini grad" id="saveMode">形式を保存</button>
+        <span class="hint" id="modeHint"></span>
       </div>
     </div>
 
@@ -192,6 +207,35 @@
         <span class="hint">Riot APIを人数ぶん呼ぶので少し時間がかかります</span>
       </div>
       <div id="memberList" style="margin-top:9px"></div>
+    </div>
+  </div>
+
+  <!-- ============ チーム（ダブルアップ） ============ -->
+  <div class="panel" id="p-teams">
+    <div class="card">
+      <h2>チーム <span class="badge" id="teamCount">0組</span></h2>
+      <div class="lead">
+        ダブルアップは<b>2人1組</b>で戦います。ここでペアを作ります。<br>
+        ・<b>ポイントはチームに付きます。</b>途中で中身の2人を入れ替えても、そのチームが貯めたptは残ります<br>
+        ・チーム名は空でOK（2人の名前から自動で作ります）<br>
+        ・出欠はチーム単位です。片方のチェックを外すと相方ごと外れます
+      </div>
+      <div class="row">
+        <button class="mini grad" id="autoPair">余っている人を2人ずつ組ませる</button>
+        <button class="mini" id="addTeam">空のチームを作る</button>
+        <span class="hint" id="teamHint"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>ペアが決まっていない人 <span class="badge" id="restCount">0人</span></h2>
+      <div class="lead">下のチームの「＋」から入れられます。</div>
+      <div id="restList"></div>
+    </div>
+
+    <div class="card">
+      <h2>チーム一覧</h2>
+      <div id="teamList"></div>
     </div>
   </div>
 
@@ -283,7 +327,7 @@
 <div id="toast"></div>
 
 <script src="config.js"></script>
-<script src="core.js?v=cup142"></script>
+<script src="core.js?v=cup15"></script>
 <script>
 (function(){
   "use strict";
@@ -371,8 +415,13 @@
     if (document.activeElement !== $("titleInput")) $("titleInput").value = s.title || "";
     if (document.activeElement !== $("matchCountInput")) $("matchCountInput").value = s.matchCount;
     if (document.activeElement !== $("tableCountInput")) $("tableCountInput").value = s.tableCount;
-    $("capHint").textContent = "定員 " + (s.tableCount * C.SEATS_PER_TABLE) +
-      "人（8人×" + s.tableCount + "卓）";
+    const DBL = C.isDouble(s);
+    $("capHint").textContent = DBL
+      ? ("定員 " + (s.tableCount * 4) + "チーム／" + (s.tableCount * 8) + "人（4チーム×" + s.tableCount + "卓）")
+      : ("定員 " + (s.tableCount * C.SEATS_PER_TABLE) + "人（8人×" + s.tableCount + "卓）");
+    $("modeSolo").checked = !DBL;
+    $("modeDouble").checked = DBL;
+    $("modeHint").textContent = DBL ? "いまはダブルアップ（2人1組）です" : "いまは個人戦です";
     const v = C.normVisibility(s.visibility);
     $("visAll").checked = (v.mode === "all");
     $("visRoles").checked = (v.mode === "roles");
@@ -381,10 +430,133 @@
       ? (v.roleIds.map(id => C.kindLabel(id)).join("・") + " だけ入場できます")
       : "いまは全員が入れます";
     renderMembers();
+    renderTeams();
     updateShare();
   }
 
   $("saveTitle").onclick = () => { store.setBoardTitle($("titleInput").value); toast("大会名を保存しました"); };
+  $("saveMode").onclick = () => {
+    const want = $("modeDouble").checked ? "doubleup" : "solo";
+    if (want === store.state.mode){ toast("いまの形式のままです"); return; }
+    if (!confirm("形式を「" + (want === "doubleup" ? "ダブルアップ" : "個人戦") +
+                 "」に変えます。\nいまの配置と順位はすべて消えます。よろしいですか？")) { render(); return; }
+    store.setMode(want);
+    toast(want === "doubleup" ? "ダブルアップにしました。つぎは「チーム」でペアを作ってください" : "個人戦にしました");
+  };
+
+  /* =============================================================
+     チーム（ダブルアップのペア）
+     ============================================================= */
+  function avatarImg(p){
+    const im = document.createElement("img");
+    im.src = (p && p.discord && p.discord.avatar) || "";
+    im.onerror = function(){ this.style.visibility = "hidden"; };
+    return im;
+  }
+  function renderTeams(){
+    const s = store.state;
+    const teams = C.teamsOf(s);
+    const rest = C.unpairedPlayers(s);
+    $("teamCount").textContent = teams.length + "組";
+    $("restCount").textContent = rest.length + "人";
+    $("teamHint").textContent = C.isDouble(s)
+      ? "" : "※ いまは個人戦です。ここの設定は「形式」をダブルアップにすると使われます";
+
+    /* 余っている人 */
+    const rb = $("restList");
+    rb.innerHTML = "";
+    if (!rest.length){
+      rb.innerHTML = '<div class="hint">全員ペアが決まっています。</div>';
+    } else {
+      rest.forEach(p => {
+        const row = document.createElement("div");
+        row.className = "mrow";
+        row.appendChild(avatarImg(p));
+        const who = document.createElement("div");
+        who.className = "who";
+        who.innerHTML = '<div class="nm">' + esc(p.name) + "</div>" +
+          '<div class="sub">' + esc(p.riotId || "—") + " ・ " + esc(C.rankLabel(p.rank)) + "</div>";
+        row.appendChild(who);
+        // 空きのあるチームへ入れる
+        const sel = document.createElement("select");
+        sel.className = "kindsel";
+        const open = teams.filter(t => (t.members || []).length < 2);
+        sel.innerHTML = '<option value="">チームに入れる…</option>' +
+          open.map(t => '<option value="' + t.id + '">' + esc(C.teamLabel(s, t)) + "</option>").join("") +
+          '<option value="__new">＋ この人で新しいチームを作る</option>';
+        sel.onchange = () => {
+          if (!sel.value) return;
+          if (sel.value === "__new") store.createTeam([p.id]);
+          else store.addToTeam(sel.value, p.id);
+          toast(p.name + " をチームに入れました");
+        };
+        row.appendChild(sel);
+        rb.appendChild(row);
+      });
+    }
+
+    /* チーム一覧 */
+    const box = $("teamList");
+    box.innerHTML = "";
+    if (!teams.length){
+      box.innerHTML = '<div class="hint">まだチームがありません。' +
+        '上の「余っている人を2人ずつ組ませる」が手早いです。</div>';
+      return;
+    }
+    teams.forEach((t, i) => {
+      const ms = C.teamMembers(s, t);
+      const row = document.createElement("div");
+      row.className = "mrow";
+
+      const no = document.createElement("div");
+      no.style.cssText = "width:26px;flex:none;font-weight:800;color:var(--muted)";
+      no.textContent = (i + 1);
+      row.appendChild(no);
+
+      const who = document.createElement("div");
+      who.className = "who";
+      who.innerHTML = '<div class="nm">' + esc(C.teamLabel(s, t)) + "</div>" +
+        '<div class="sub">' +
+        (ms.length ? ms.map(p => esc(p.name) + "（" + esc(C.rankLabel(p.rank)) + "）").join(" ＋ ")
+                   : "まだ誰も入っていません") +
+        (ms.length === 1 ? " ／ あと1人" : "") + "</div>";
+      row.appendChild(who);
+
+      const ni = document.createElement("input");
+      ni.type = "text";
+      ni.value = t.name || "";
+      ni.placeholder = "チーム名（任意）";
+      ni.onchange = () => { store.setTeamName(t.id, ni.value); toast("チーム名を変えました"); };
+      row.appendChild(ni);
+
+      const act = document.createElement("div");
+      act.style.cssText = "display:flex;gap:6px;flex-wrap:wrap";
+      ms.forEach(p => {
+        const b = document.createElement("button");
+        b.className = "mini";
+        b.textContent = p.name + " を外す";
+        b.onclick = () => { store.removeFromTeam(p.id); toast(p.name + " を外しました"); };
+        act.appendChild(b);
+      });
+      const del = document.createElement("button");
+      del.className = "mini danger";
+      del.textContent = "チーム削除";
+      del.title = "このチームが貯めたptも消えます";
+      del.onclick = () => {
+        if (!confirm("「" + C.teamLabel(s, t) + "」を削除しますか？\nこのチームが貯めたptも消えます。")) return;
+        store.removeTeam(t.id);
+        toast("削除しました");
+      };
+      act.appendChild(del);
+      row.appendChild(act);
+      box.appendChild(row);
+    });
+  }
+  $("autoPair").onclick = () => {
+    const n = store.autoPairTeams();
+    toast(n ? (n + "組つくりました") : "組ませられる人がいません（2人以上必要です）");
+  };
+  $("addTeam").onclick = () => { store.createTeam([]); toast("空のチームを作りました"); };
   $("saveCounts").onclick = () => {
     const mc = parseInt($("matchCountInput").value, 10) || 1;
     const tc = parseInt($("tableCountInput").value, 10) || 1;
